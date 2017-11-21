@@ -10,7 +10,6 @@
 #include <string>
 #include <vector>
 #include <iosfwd>
-#include <memory>
 #include <stack>
 
 
@@ -20,7 +19,7 @@ namespace matroska {
 
 struct ebml_node
 {
-    unsigned char id[4];
+    uint32_t id;
     uint64_t size;
     int64_t position;
 };

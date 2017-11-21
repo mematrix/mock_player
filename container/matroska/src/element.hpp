@@ -44,10 +44,62 @@ struct value_set_helper
 
 #define USING_VALUE_METHOD(value_set) \
     enum { DEFAULT_VALUE_SET = (value_set) }; \
+    int32_t mask = 0; \
     int32_t get_mask() const { return mask; } \
     using value_set_helper::is_set; \
     using value_set_helper::is_user_set; \
     using value_set_helper::is_all_set
+
+
+enum class element_type
+{
+    UNSIGNED_INTEGER = 0,
+    SIGNED_INTEGER,
+    FLOAT,
+    STRING,
+    BINARY,
+    GENERIC_TYPE
+};
+
+class undefined_class_suffix;
+
+union pointer_type_detect
+{
+    void *_t_pointer;
+    const void *_t_const_pointer;
+    int undefined_class_suffix::* _t_class_member_pointer;
+};
+
+union any_pointer_data
+{
+    // inspired by mingw gcc. source header: <std_function.h>
+
+    void *access() noexcept { return &_pod_data[0]; }
+
+    const void *access() const noexcept { return &_pod_data[0]; }
+
+    template<typename Tp>
+    Tp &access() noexcept { return *static_cast<Tp *>(access()); }
+
+    template<typename Tp>
+    const Tp &access() const noexcept { return *static_cast<const Tp *>(access()); }
+
+    pointer_type_detect _unused_value;
+    char _pod_data[sizeof(pointer_type_detect)];
+};
+
+struct element_identify
+{
+    element_type type;
+    int32_t name_mask;
+    uint32_t ebml_id;
+    any_pointer_data class_member_ptr;
+
+    template<typename Tp>
+    element_identify(element_type t, Tp ptr, int32_t mask, uint32_t id = 0) noexcept : type(t), name_mask(mask), ebml_id(id) {
+        class_member_ptr.access<Tp>() = ptr;
+    }
+};
 
 
 struct ebml_header : public value_set_helper<ebml_header>
@@ -65,80 +117,8 @@ struct ebml_header : public value_set_helper<ebml_header>
 
     ebml_header() : doc_type("matroska") { }
 
-    uint64_t get_version() const { return version; }
-
-    void set_version(uint64_t v)
-    {
-        version = v;
-        mask |= VERSION;
-    }
-
-    uint64_t get_read_version() const { return read_version; }
-
-    void set_read_version(uint64_t v)
-    {
-        read_version = v;
-        mask |= READ_VERSION;
-    }
-
-    uint64_t get_max_id_length() const { return max_id_length; }
-
-    void set_max_id_length(uint64_t v)
-    {
-        max_id_length = v;
-        mask |= MAX_ID_LENGTH;
-    }
-
-    uint64_t get_max_size_length() const { return max_size_length; }
-
-    void set_max_size_length(uint64_t v)
-    {
-        max_size_length = v;
-        mask |= MAX_SIZE_LENGTH;
-    }
-
-    const std::string &get_doc_type() const { return doc_type; }
-
-    void set_doc_type(std::string &&v)
-    {
-        doc_type = std::move(v);
-        mask |= DOC_TYPE;
-    }
-
-    uint64_t get_doc_type_version() const { return doc_type_version; }
-
-    void set_doc_type_version(uint64_t v)
-    {
-        doc_type_version = v;
-        mask |= DOC_TYPE_VERSION;
-    }
-
-    uint64_t get_doc_type_read_version() const { return doc_type_read_version; }
-
-    void set_doc_type_read_version(uint64_t v)
-    {
-        doc_type_read_version = v;
-        mask |= DOC_TYPE_READ_VERSION;
-    }
-
     USING_VALUE_METHOD(VERSION | READ_VERSION | MAX_ID_LENGTH | MAX_SIZE_LENGTH | DOC_TYPE | DOC_TYPE_VERSION | DOC_TYPE_READ_VERSION);
 
-    /*bool is_set(int32_t element)
-    {
-        return (element & (mask | DEFAULT_VALUE_SET)) != 0;
-    }
-
-    bool is_user_set(int32_t element)
-    {
-        return (element & mask) != 0;
-    }
-
-    bool is_all_set(int32_t elements)
-    {
-        return (elements & (mask | DEFAULT_VALUE_SET)) == elements;
-    }*/
-
-private:
     uint64_t version = 1;
     uint64_t read_version = 1;
     uint64_t max_id_length = 4;
@@ -146,9 +126,10 @@ private:
     std::string doc_type;
     uint64_t doc_type_version = 1;
     uint64_t doc_type_read_version = 1;
-
-    int32_t mask = 0;
 };
+
+const element_identify *get_ebml_header_identifies();
+constexpr uint32_t ebml_header_identifies_size = 7;
 
 
 struct meta_seek : public value_set_helper<meta_seek>
@@ -161,30 +142,14 @@ struct meta_seek : public value_set_helper<meta_seek>
 
     meta_seek() = default;
 
-    const binary &get_id() const { return id; }
-
-    void set_id(binary &&v)
-    {
-        id = std::move(v);
-        mask |= ID;
-    }
-
-    const uint64_t get_position() const { return position; }
-
-    void set_position(uint64_t v)
-    {
-        position = v;
-        mask |= POSITION;
-    }
-
     USING_VALUE_METHOD(0);
 
-private:
     binary id;
     uint64_t position = 0;
-
-    int32_t mask = 0;
 };
+
+const element_identify *get_meta_seek_identifies();
+constexpr uint32_t meta_seek_identifies_size = 2;
 
 
 struct meta_seek_head : public value_set_helper<meta_seek_head>
@@ -196,22 +161,13 @@ struct meta_seek_head : public value_set_helper<meta_seek_head>
 
     meta_seek_head() = default;
 
-    const std::list<meta_seek> &get_seeks() const { return seeks; }
-
-    void set_seeks(std::list<meta_seek> &&v)
-    {
-        seeks = std::move(v);
-        mask |= SEEK;
-    }
-
     USING_VALUE_METHOD(0);
 
-private:
     std::list<meta_seek> seeks;
-
-    int32_t mask = 0;
 };
 
+const element_identify *get_meta_seek_head_identifies();
+constexpr uint32_t meta_seek_head_identifies_size = 1;
 
 struct segment_chapter_translate : public value_set_helper<segment_chapter_translate>
 {
@@ -224,39 +180,15 @@ struct segment_chapter_translate : public value_set_helper<segment_chapter_trans
 
     segment_chapter_translate() = default;
 
-    const std::vector<uint64_t> &get_edition_uids() const { return edition_uids; }
-
-    void set_edition_uids(std::vector<uint64_t> &&v)
-    {
-        edition_uids = std::move(v);
-        mask |= EDITION_UID;
-    }
-
-    uint64_t get_codec() const { return codec; }
-
-    void set_codec(uint64_t v)
-    {
-        codec = v;
-        mask |= CODEC;
-    }
-
-    const binary &get_id() const { return id; }
-
-    void set_id(binary &&v)
-    {
-        id = std::move(v);
-        mask |= ID;
-    }
-
     USING_VALUE_METHOD(0);
 
-private:
     std::vector<uint64_t> edition_uids;
     uint64_t codec = 0;
     binary id;
-
-    int32_t mask = 0;
 };
+
+const element_identify *get_segment_chapter_translate_identifies();
+constexpr uint32_t segment_chapter_translate_identifies_size = 3;
 
 
 struct segment_info : public value_set_helper<segment_info>
@@ -281,121 +213,8 @@ struct segment_info : public value_set_helper<segment_info>
 
     segment_info() = default;
 
-    const binary &get_uid() const { return uid; }
-
-    void set_uid(binary &&v)
-    {
-        uid = std::move(v);
-        mask |= UID;
-    }
-
-    const std::string &get_filename() const { return filename; }
-
-    void set_filename(std::string &&v)
-    {
-        filename = std::move(v);
-        mask |= FILENAME;
-    }
-
-    const binary &get_prev_uid() const { return prev_uid; }
-
-    void set_prev_uid(binary &&v)
-    {
-        prev_uid = std::move(v);
-        mask |= PREV_UID;
-    }
-
-    const std::string &get_prev_filename() const { return prev_filename; }
-
-    void set_prev_filename(std::string &&v)
-    {
-        prev_filename = std::move(v);
-        mask |= PREV_FILENAME;
-    }
-
-    const binary &get_next_uid() const { return next_uid; }
-
-    void set_next_uid(binary &&v)
-    {
-        next_uid = std::move(v);
-        mask |= NEXT_UID;
-    }
-
-    const std::string &get_next_filename() const { return next_filename; }
-
-    void set_next_filename(std::string &&v)
-    {
-        next_filename = std::move(v);
-        mask |= NEXT_FILENAME;
-    }
-
-    const std::list<binary> &get_families() const { return families; }
-
-    void set_families(std::list<binary> &&v)
-    {
-        families = std::move(v);
-        mask |= FAMILY;
-    }
-
-    const std::list<segment_chapter_translate> &get_chapter_translates() const { return chapter_translates; }
-
-    void set_chapter_translates(std::list<segment_chapter_translate> &&v)
-    {
-        chapter_translates = std::move(v);
-        mask |= CHAPTER_TRANSLATE;
-    }
-
-    uint64_t get_timecode_scale() const { return timecode_scale; }
-
-    void set_timecode_scale(uint64_t v)
-    {
-        timecode_scale = v;
-        mask |= TIMECODE_SCALE;
-    }
-
-    double get_duration() const { return duration; }
-
-    void set_duration(double v)
-    {
-        duration = v;
-        mask |= DURATION;
-    }
-
-    int64_t get_date_utc() const { return date_utc; }
-
-    void set_date_uti(int64_t v)
-    {
-        date_utc = v;
-        mask |= DATE_UTC;
-    }
-
-    const std::string &get_title() const { return title; }
-
-    void set_title(std::string &&v)
-    {
-        title = std::move(v);
-        mask |= TITLE;
-    }
-
-    const std::string &get_muxing_app() const { return muxing_app; }
-
-    void set_muxing_app(std::string &&v)
-    {
-        muxing_app = std::move(v);
-        mask |= MUXING_APP;
-    }
-
-    const std::string &get_writing_app() const { return writing_app; }
-
-    void set_writing_app(std::string &&v)
-    {
-        writing_app = std::move(v);
-        mask |= WRITING_APP;
-    }
-
     USING_VALUE_METHOD(TIMECODE_SCALE);
 
-private:
     binary uid;
     std::string filename;
     binary prev_uid;
@@ -412,9 +231,29 @@ private:
     std::string title;
     std::string muxing_app;
     std::string writing_app;
-
-    int32_t mask = 0;
 };
+
+static element_identify segment_info_identifies[] = {
+        element_identify(element_type::BINARY, &segment_info::uid, segment_info::UID),
+        element_identify(element_type::STRING, &segment_info::filename, segment_info::FILENAME),
+        element_identify(element_type::BINARY, &segment_info::prev_uid, segment_info::PREV_UID),
+        element_identify(element_type::STRING, &segment_info::prev_filename, segment_info::PREV_FILENAME),
+        element_identify(element_type::BINARY, &segment_info::next_uid, segment_info::NEXT_UID),
+        element_identify(element_type::STRING, &segment_info::next_filename, segment_info::NEXT_FILENAME),
+
+        element_identify(element_type::GENERIC_TYPE, &segment_info::families, segment_info::FAMILY),
+        element_identify(element_type::GENERIC_TYPE, &segment_info::chapter_translates, segment_info::CHAPTER_TRANSLATE),
+
+        element_identify(element_type::UNSIGNED_INTEGER, &segment_info::timecode_scale, segment_info::TIMECODE_SCALE),
+        element_identify(element_type::FLOAT, &segment_info::duration, segment_info::DURATION),
+        element_identify(element_type::SIGNED_INTEGER, &segment_info::date_utc, segment_info::DATE_UTC),
+        element_identify(element_type::STRING, &segment_info::title, segment_info::TITLE),
+        element_identify(element_type::STRING, &segment_info::muxing_app, segment_info::MUXING_APP),
+        element_identify(element_type::STRING, &segment_info::writing_app, segment_info::WRITING_APP)
+};
+
+const element_identify *get_segment_info_identifies();
+constexpr uint32_t segment_info_identifies_size = 14;
 
 
 struct cluster_silent_tracks : public value_set_helper<cluster_silent_tracks>
@@ -430,21 +269,17 @@ struct cluster_silent_tracks : public value_set_helper<cluster_silent_tracks>
 
     cluster_silent_tracks &operator=(cluster_silent_tracks &&) = default;
 
-    const std::vector<uint64_t> &get_numbers() const { return numbers; }
-
-    void set_numbers(std::vector<uint64_t> &&v)
-    {
-        numbers = std::move(v);
-        mask |= NUMBER;
-    }
-
     USING_VALUE_METHOD(0);
 
-private:
     std::vector<uint64_t> numbers;
-
-    int32_t mask = 0;
 };
+
+static element_identify cluster_silent_tracks_identifies[] = {
+        element_identify(element_type::GENERIC_TYPE, &cluster_silent_tracks::numbers, cluster_silent_tracks::NUMBER)
+};
+
+const element_identify *get_cluster_silent_tracks_identifies();
+constexpr uint32_t cluster_silent_tracks_identifies_size = 1;
 
 
 struct cluster_block_more : public value_set_helper<cluster_block_more>

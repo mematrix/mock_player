@@ -78,9 +78,7 @@ int32_t ebml_parser::parse_next(ebml_node &result)
     if (size != stream.gcount()) {
         return -1;
     }
-    for (int i = 0; i < 4; ++i) {
-        result.id[i] = static_cast<unsigned char>(data[i]);
-    }
+    result.id = static_cast<uint32_t>(util::from_big_endian_variable_unsigned(data, size));
 
     pre = stream.peek();
     if (!stream) {
