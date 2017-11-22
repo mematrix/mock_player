@@ -10,7 +10,7 @@
 #include <string>
 #include <vector>
 #include <list>
-#include <bits/unique_ptr.h>
+#include <memory>
 
 #define ELEMENT_PROPERTY(ma, mu, def, type, ver)
 
@@ -96,7 +96,8 @@ struct element_identify
     any_pointer_data class_member_ptr;
 
     template<typename Tp>
-    element_identify(element_type t, Tp ptr, int32_t mask, uint32_t id = 0) noexcept : type(t), name_mask(mask), ebml_id(id) {
+    element_identify(element_type t, Tp ptr, int32_t mask, uint32_t id) noexcept : type(t), name_mask(mask), ebml_id(id)
+    {
         class_member_ptr.access<Tp>() = ptr;
     }
 };
@@ -117,6 +118,10 @@ struct ebml_header : public value_set_helper<ebml_header>
 
     ebml_header() : doc_type("matroska") { }
 
+    ebml_header(ebml_header &&) = default;
+
+    ebml_header &operator=(ebml_header &&) = default;
+
     USING_VALUE_METHOD(VERSION | READ_VERSION | MAX_ID_LENGTH | MAX_SIZE_LENGTH | DOC_TYPE | DOC_TYPE_VERSION | DOC_TYPE_READ_VERSION);
 
     uint64_t version = 1;
@@ -129,6 +134,7 @@ struct ebml_header : public value_set_helper<ebml_header>
 };
 
 const element_identify *get_ebml_header_identifies();
+
 constexpr uint32_t ebml_header_identifies_size = 7;
 
 
@@ -142,6 +148,10 @@ struct meta_seek : public value_set_helper<meta_seek>
 
     meta_seek() = default;
 
+    meta_seek(meta_seek &&) = default;
+
+    meta_seek &operator=(meta_seek &&) = default;
+
     USING_VALUE_METHOD(0);
 
     binary id;
@@ -149,6 +159,7 @@ struct meta_seek : public value_set_helper<meta_seek>
 };
 
 const element_identify *get_meta_seek_identifies();
+
 constexpr uint32_t meta_seek_identifies_size = 2;
 
 
@@ -161,12 +172,17 @@ struct meta_seek_head : public value_set_helper<meta_seek_head>
 
     meta_seek_head() = default;
 
+    meta_seek_head(meta_seek_head &&) = default;
+
+    meta_seek_head &operator=(meta_seek_head &&) = default;
+
     USING_VALUE_METHOD(0);
 
     std::list<meta_seek> seeks;
 };
 
 const element_identify *get_meta_seek_head_identifies();
+
 constexpr uint32_t meta_seek_head_identifies_size = 1;
 
 struct segment_chapter_translate : public value_set_helper<segment_chapter_translate>
@@ -180,6 +196,10 @@ struct segment_chapter_translate : public value_set_helper<segment_chapter_trans
 
     segment_chapter_translate() = default;
 
+    segment_chapter_translate(segment_chapter_translate &&) = default;
+
+    segment_chapter_translate &operator=(segment_chapter_translate &&) = default;
+
     USING_VALUE_METHOD(0);
 
     std::vector<uint64_t> edition_uids;
@@ -188,6 +208,7 @@ struct segment_chapter_translate : public value_set_helper<segment_chapter_trans
 };
 
 const element_identify *get_segment_chapter_translate_identifies();
+
 constexpr uint32_t segment_chapter_translate_identifies_size = 3;
 
 
@@ -213,6 +234,10 @@ struct segment_info : public value_set_helper<segment_info>
 
     segment_info() = default;
 
+    segment_info(segment_info &&) = default;
+
+    segment_info &operator=(segment_info &&) = default;
+
     USING_VALUE_METHOD(TIMECODE_SCALE);
 
     binary uid;
@@ -233,26 +258,8 @@ struct segment_info : public value_set_helper<segment_info>
     std::string writing_app;
 };
 
-static element_identify segment_info_identifies[] = {
-        element_identify(element_type::BINARY, &segment_info::uid, segment_info::UID),
-        element_identify(element_type::STRING, &segment_info::filename, segment_info::FILENAME),
-        element_identify(element_type::BINARY, &segment_info::prev_uid, segment_info::PREV_UID),
-        element_identify(element_type::STRING, &segment_info::prev_filename, segment_info::PREV_FILENAME),
-        element_identify(element_type::BINARY, &segment_info::next_uid, segment_info::NEXT_UID),
-        element_identify(element_type::STRING, &segment_info::next_filename, segment_info::NEXT_FILENAME),
-
-        element_identify(element_type::GENERIC_TYPE, &segment_info::families, segment_info::FAMILY),
-        element_identify(element_type::GENERIC_TYPE, &segment_info::chapter_translates, segment_info::CHAPTER_TRANSLATE),
-
-        element_identify(element_type::UNSIGNED_INTEGER, &segment_info::timecode_scale, segment_info::TIMECODE_SCALE),
-        element_identify(element_type::FLOAT, &segment_info::duration, segment_info::DURATION),
-        element_identify(element_type::SIGNED_INTEGER, &segment_info::date_utc, segment_info::DATE_UTC),
-        element_identify(element_type::STRING, &segment_info::title, segment_info::TITLE),
-        element_identify(element_type::STRING, &segment_info::muxing_app, segment_info::MUXING_APP),
-        element_identify(element_type::STRING, &segment_info::writing_app, segment_info::WRITING_APP)
-};
-
 const element_identify *get_segment_info_identifies();
+
 constexpr uint32_t segment_info_identifies_size = 14;
 
 
@@ -274,11 +281,8 @@ struct cluster_silent_tracks : public value_set_helper<cluster_silent_tracks>
     std::vector<uint64_t> numbers;
 };
 
-static element_identify cluster_silent_tracks_identifies[] = {
-        element_identify(element_type::GENERIC_TYPE, &cluster_silent_tracks::numbers, cluster_silent_tracks::NUMBER)
-};
-
 const element_identify *get_cluster_silent_tracks_identifies();
+
 constexpr uint32_t cluster_silent_tracks_identifies_size = 1;
 
 
@@ -292,30 +296,19 @@ struct cluster_block_more : public value_set_helper<cluster_block_more>
 
     cluster_block_more() = default;
 
-    uint64_t get_add_id() const { return add_id; }
+    cluster_block_more(cluster_block_more &&) = default;
 
-    void set_add_id(uint64_t v)
-    {
-        add_id = v;
-        mask |= ADD_ID;
-    }
-
-    const binary &get_additional() const { return additional; }
-
-    void set_additional(binary &&v)
-    {
-        additional = std::move(v);
-        mask |= ADDITIONAL;
-    }
+    cluster_block_more &operator=(cluster_block_more &&) = default;
 
     USING_VALUE_METHOD(ADD_ID);
 
-private:
     uint64_t add_id = 1;
     binary additional;
-
-    int32_t mask = 0;
 };
+
+const element_identify *get_cluster_block_more_identifies();
+
+constexpr uint32_t cluster_block_more_identifies_size = 2;
 
 
 struct cluster_block_additions : public value_set_helper<cluster_block_additions>
@@ -333,21 +326,14 @@ struct cluster_block_additions : public value_set_helper<cluster_block_additions
 
     cluster_block_additions &operator=(cluster_block_additions &&) = default;
 
-    const std::list<cluster_block_more> &get_block_more() const { return block_more; }
-
-    void set_block_more(std::list<cluster_block_more> &&v)
-    {
-        block_more = std::move(v);
-        mask |= BLOCK_MORE;
-    }
-
     USING_VALUE_METHOD(0);
 
-private:
     std::list<cluster_block_more> block_more;
-
-    int32_t mask = 0;
 };
+
+const element_identify *get_cluster_block_additions_identifies();
+
+constexpr uint32_t cluster_block_additions_identifies_size = 1;
 
 
 struct cluster_time_slice : public value_set_helper<cluster_time_slice>
@@ -359,21 +345,14 @@ struct cluster_time_slice : public value_set_helper<cluster_time_slice>
 
     cluster_time_slice() = default;
 
-    uint64_t get_lace_number() const { return lace_number; }
-
-    void set_lace_number(uint64_t v)
-    {
-        lace_number = v;
-        mask |= LACE_NUMBER;
-    }
-
     USING_VALUE_METHOD(LACE_NUMBER);
 
-private:
     uint64_t lace_number = 0;
-
-    int32_t mask = 0;
 };
+
+const element_identify *get_cluster_time_slice_identifies();
+
+constexpr uint32_t cluster_time_slice_identifies_size = 1;
 
 
 struct cluster_slices : public value_set_helper<cluster_slices>
@@ -391,21 +370,14 @@ struct cluster_slices : public value_set_helper<cluster_slices>
 
     cluster_slices &operator=(cluster_slices &&) = default;
 
-    const std::list<cluster_time_slice> &get_time_slices() const { return time_slices; }
-
-    void set_time_slices(std::list<cluster_time_slice> &&v)
-    {
-        time_slices = std::move(v);
-        mask |= TIME_SLICE;
-    }
-
     USING_VALUE_METHOD(0);
 
-private:
     std::list<cluster_time_slice> time_slices;
-
-    int32_t mask = 0;
 };
+
+const element_identify *get_cluster_slices_identifies();
+
+constexpr uint32_t cluster_slices_identifies_size = 1;
 
 
 struct cluster_block : public value_set_helper<cluster_block>
@@ -428,73 +400,8 @@ struct cluster_block : public value_set_helper<cluster_block>
 
     cluster_block &operator=(cluster_block &&) = default;
 
-    const binary &get_block() const { return block; }
-
-    void set_block(binary v)
-    {
-        block = std::move(v);
-        mask |= BLOCK;
-    }
-
-    const cluster_block_additions &get_additions() const { return additions; }
-
-    void set_additions(cluster_block_additions &&v)
-    {
-        additions = std::move(v);
-        mask |= ADDITIONS;
-    }
-
-    uint64_t get_duration() const { return duration; }
-
-    void set_duration(uint64_t v)
-    {
-        duration = v;
-        mask |= DURATION;
-    }
-
-    uint64_t get_reference_priority() const { return reference_priority; }
-
-    void set_reference_priority(uint64_t v)
-    {
-        reference_priority = v;
-        mask |= REFERENCE_PRIORITY;
-    }
-
-    int64_t get_reference_block() const { return reference_block; }
-
-    void set_reference_block(int64_t v)
-    {
-        reference_block = v;
-        mask |= REFERENCE_BLOCK;
-    }
-
-    const binary &get_codec_state() const { return codec_state; }
-
-    void set_codec_state(binary &&v)
-    {
-        codec_state = std::move(v);
-        mask |= CODEC_STATE;
-    }
-
-    int64_t get_discard_padding() const { return discard_padding; }
-
-    void set_discard_padding(int64_t v)
-    {
-        discard_padding = v;
-        mask |= DISCARD_PADDING;
-    }
-
-    const cluster_slices &get_slices() const { return slices; }
-
-    void set_slice(cluster_slices &&v)
-    {
-        slices = std::move(v);
-        mask |= SLICES;
-    }
-
     USING_VALUE_METHOD(REFERENCE_PRIORITY);
 
-private:
     binary block;
     cluster_block_additions additions;
     uint64_t duration = 0;
@@ -503,9 +410,11 @@ private:
     binary codec_state;
     int64_t discard_padding = 0;
     cluster_slices slices;
-
-    int32_t mask = 0;
 };
+
+const element_identify *get_cluster_block_identifies();
+
+constexpr uint32_t cluster_block_identifies_size = 8;
 
 
 struct cluster : public value_set_helper<cluster>
@@ -526,66 +435,19 @@ struct cluster : public value_set_helper<cluster>
 
     cluster &operator=(cluster &&)= default;
 
-    uint64_t get_timecode() const { return timecode; }
-
-    void set_timecode(uint64_t v)
-    {
-        timecode = v;
-        mask |= TIMECODE;
-    }
-
-    const cluster_silent_tracks &get_silent_tracks() const { return silent_tracks; }
-
-    void set_silent_tracks(cluster_silent_tracks &&v)
-    {
-        silent_tracks = std::move(v);
-        mask |= SILENT_TRACKS;
-    }
-
-    uint64_t get_position() const { return position; }
-
-    void set_position(uint64_t v)
-    {
-        position = v;
-        mask |= POSITION;
-    }
-
-    uint64_t get_prev_size() const { return prev_size; }
-
-    void set_prev_size(uint64_t v)
-    {
-        prev_size = v;
-        mask |= PREV_SIZE;
-    }
-
-    const std::list<binary> &get_simple_blocks() const { return simple_blocks; }
-
-    void set_simple_blocks(std::list<binary> &&v)
-    {
-        simple_blocks = std::move(v);
-        mask |= SIMPLE_BLOCK;
-    }
-
-    const std::list<cluster_block> &get_block_group() const { return block_group; }
-
-    void set_block_group(std::list<cluster_block> &&v)
-    {
-        block_group = std::move(v);
-        mask |= BLOCK_GROUP;
-    }
-
     USING_VALUE_METHOD(0);
 
-private:
     uint64_t timecode = 0;
     cluster_silent_tracks silent_tracks;
     uint64_t position = 0;
     uint64_t prev_size = 0;
     std::list<binary> simple_blocks;
     std::list<cluster_block> block_group;
-
-    int32_t mask = 0;
 };
+
+const element_identify *get_cluster_identifies();
+
+constexpr uint32_t cluster_identifies_size = 6;
 
 
 struct track_translate : public value_set_helper<track_translate>
@@ -603,39 +465,16 @@ struct track_translate : public value_set_helper<track_translate>
 
     track_translate &operator=(track_translate &&)= default;
 
-    const std::vector<uint64_t> &get_edition_uids() const { return edition_uids; }
-
-    void set_edition_uids(std::vector<uint64_t> &&v)
-    {
-        edition_uids = std::move(v);
-        mask |= EDITION_UID;
-    }
-
-    uint64_t get_codec() const { return codec; }
-
-    void set_codec(uint64_t v)
-    {
-        codec = v;
-        mask |= CODEC;
-    }
-
-    const binary &get_track_id() const { return track_id; }
-
-    void set_track_id(binary v)
-    {
-        track_id = std::move(v);
-        mask |= TRACK_ID;
-    }
-
     USING_VALUE_METHOD(0);
 
-private:
     std::vector<uint64_t> edition_uids;
     uint64_t codec = 0;
     binary track_id;
-
-    int32_t mask = 0;
 };
+
+const element_identify *get_track_translate_identifies();
+
+constexpr uint32_t track_translate_identifies_size = 3;
 
 
 struct track_video_color_metadata : public value_set_helper<track_video_color_metadata>
@@ -656,89 +495,8 @@ struct track_video_color_metadata : public value_set_helper<track_video_color_me
 
     track_video_color_metadata() = default;
 
-    double get_primary_r_chromaticity_x() const { return primary_r_chromaticity_x; }
-
-    void set_primary_r_chromaticity_x(double v)
-    {
-        primary_r_chromaticity_x = v;
-        mask |= PRIMARY_R_CHROMATICITY_X;
-    }
-
-    double get_primary_r_chromaticity_y() const { return primary_r_chromaticity_y; }
-
-    void set_primary_r_chromaticity_y(double v)
-    {
-        primary_r_chromaticity_y = v;
-        mask |= PRIMARY_R_CHROMATICITY_Y;
-    }
-
-    double get_primary_g_chromaticity_x() const { return primary_g_chromaticity_x; }
-
-    void set_primary_g_chromaticity_x(double v)
-    {
-        primary_g_chromaticity_x = v;
-        mask |= PRIMARY_G_CHROMATICITY_X;
-    }
-
-    double get_primary_g_chromaticity_y() const { return primary_g_chromaticity_y; }
-
-    void set_primary_g_chromaticity_y(double v)
-    {
-        primary_g_chromaticity_y = v;
-        mask |= PRIMARY_G_CHROMATICITY_Y;
-    }
-
-    double get_primary_b_chromaticity_x() const { return primary_b_chromaticity_x; }
-
-    void set_primary_b_chromaticity_x(double v)
-    {
-        primary_b_chromaticity_x = v;
-        mask |= PRIMARY_B_CHROMATICITY_X;
-    }
-
-    double get_primary_b_chromaticity_y() const { return primary_b_chromaticity_y; }
-
-    void set_primary_b_chromaticity_y(double v)
-    {
-        primary_b_chromaticity_y = v;
-        mask |= PRIMARY_B_CHROMATICITY_Y;
-    }
-
-    double get_white_point_chromaticity_x() const { return white_point_chromaticity_x; }
-
-    void set_white_point_chromaticity_x(double v)
-    {
-        white_point_chromaticity_x = v;
-        mask |= WHITE_POINT_CHROMATICITY_X;
-    }
-
-    double get_white_point_chromaticity_y() const { return white_point_chromaticity_y; }
-
-    void set_white_point_chromaticity_y(double v)
-    {
-        white_point_chromaticity_y = v;
-        mask |= WHITE_POINT_CHROMATICITY_Y;
-    }
-
-    double get_luminance_max() const { return luminance_max; }
-
-    void set_luminance_max(double v)
-    {
-        luminance_max = v;
-        mask |= LUMINANCE_MAX;
-    }
-
-    double get_luminance_min() const { return luminance_min; }
-
-    void set_luminance_min(double v)
-    {
-        luminance_min = v;
-        mask |= LUMINANCE_MIN;
-    }
-
     USING_VALUE_METHOD(0);
 
-private:
     double primary_r_chromaticity_x = 0.0;
     double primary_r_chromaticity_y = 0.0;
     double primary_g_chromaticity_x = 0.0;
@@ -749,9 +507,11 @@ private:
     double white_point_chromaticity_y = 0.0;
     double luminance_max = 0.0;
     double luminance_min = 0.0;
-
-    int32_t mask = 0;
 };
+
+const element_identify *get_track_video_color_metadata_identifies();
+
+constexpr uint32_t track_video_color_metadata_identifies_size = 10;
 
 
 struct track_video_color : public value_set_helper<track_video_color>
@@ -780,163 +540,8 @@ struct track_video_color : public value_set_helper<track_video_color>
 
     track_video_color &operator=(track_video_color &&)= default;
 
-    uint64_t get_matrix_coefficients() const
-    {
-        return matrix_coefficients;
-    }
-
-    void set_matrix_coefficients(uint64_t matrix_coefficients)
-    {
-        track_video_color::matrix_coefficients = matrix_coefficients;
-        mask |= MATRIX_COEFFICIENTS;
-    }
-
-    uint64_t get_bits_per_channel() const
-    {
-        return bits_per_channel;
-    }
-
-    void set_bits_per_channel(uint64_t bits_per_channel)
-    {
-        track_video_color::bits_per_channel = bits_per_channel;
-        mask |= BITS_PER_CHANNEL;
-    }
-
-    uint64_t get_chroma_subsampling_horz() const
-    {
-        return chroma_subsampling_horz;
-    }
-
-    void set_chroma_subsampling_horz(uint64_t chroma_subsampling_horz)
-    {
-        track_video_color::chroma_subsampling_horz = chroma_subsampling_horz;
-        mask |= CHROMA_SUBSAMPLING_HORZ;
-    }
-
-    uint64_t get_chroma_subsampling_vert() const
-    {
-        return chroma_subsampling_vert;
-    }
-
-    void set_chroma_subsampling_vert(uint64_t chroma_subsampling_vert)
-    {
-        track_video_color::chroma_subsampling_vert = chroma_subsampling_vert;
-        mask |= CHROMA_SUBSAMPLING_VERT;
-    }
-
-    uint64_t get_cb_subsampling_horz() const
-    {
-        return cb_subsampling_horz;
-    }
-
-    void set_cb_subsampling_horz(uint64_t cb_subsampling_horz)
-    {
-        track_video_color::cb_subsampling_horz = cb_subsampling_horz;
-        mask |= CB_SUBSAMPLING_HORZ;
-    }
-
-    uint64_t get_cb_subsampling_vert() const
-    {
-        return cb_subsampling_vert;
-    }
-
-    void set_cb_subsampling_vert(uint64_t cb_subsampling_vert)
-    {
-        track_video_color::cb_subsampling_vert = cb_subsampling_vert;
-        mask |= CB_SUBSAMPLING_VERT;
-    }
-
-    uint64_t get_chroma_siting_horz() const
-    {
-        return chroma_siting_horz;
-    }
-
-    void set_chroma_siting_horz(uint64_t chroma_siting_horz)
-    {
-        track_video_color::chroma_siting_horz = chroma_siting_horz;
-        mask |= CHROMA_SITING_HORZ;
-    }
-
-    uint64_t get_chroma_siting_vert() const
-    {
-        return chroma_siting_vert;
-    }
-
-    void set_chroma_siting_vert(uint64_t chroma_siting_vert)
-    {
-        track_video_color::chroma_siting_vert = chroma_siting_vert;
-        mask |= CHROMA_SITING_VERT;
-    }
-
-    uint64_t get_range() const
-    {
-        return range;
-    }
-
-    void set_range(uint64_t range)
-    {
-        track_video_color::range = range;
-        mask |= RANGE;
-    }
-
-    uint64_t get_transfer_characteristics() const
-    {
-        return transfer_characteristics;
-    }
-
-    void set_transfer_characteristics(uint64_t transfer_characteristics)
-    {
-        track_video_color::transfer_characteristics = transfer_characteristics;
-        mask |= TRANSFER_CHARACTERISTICS;
-    }
-
-    uint64_t get_primaries() const
-    {
-        return primaries;
-    }
-
-    void set_primaries(uint64_t primaries)
-    {
-        track_video_color::primaries = primaries;
-        mask |= PRIMARIES;
-    }
-
-    uint64_t get_max_cll() const
-    {
-        return max_cll;
-    }
-
-    void set_max_cll(uint64_t max_cll)
-    {
-        track_video_color::max_cll = max_cll;
-        mask |= MAX_CLL;
-    }
-
-    uint64_t get_max_fall() const
-    {
-        return max_fall;
-    }
-
-    void set_max_fall(uint64_t max_fall)
-    {
-        track_video_color::max_fall = max_fall;
-        mask |= MAX_FALL;
-    }
-
-    const std::unique_ptr<track_video_color_metadata> &get_mastering_metadata() const
-    {
-        return mastering_metadata;
-    }
-
-    void set_mastering_metadata(std::unique_ptr<track_video_color_metadata> &&mastering_metadata)
-    {
-        track_video_color::mastering_metadata = std::move(mastering_metadata);
-        mask |= MASTERING_METADATA;
-    }
-
     USING_VALUE_METHOD(MATRIX_COEFFICIENTS | BITS_PER_CHANNEL | CHROMA_SITING_HORZ | CHROMA_SITING_VERT | RANGE | TRANSFER_CHARACTERISTICS | PRIMARIES);
 
-private:
     uint64_t matrix_coefficients = 2;
     uint64_t bits_per_channel = 0;
     uint64_t chroma_subsampling_horz = 0;
@@ -951,9 +556,11 @@ private:
     uint64_t max_cll = 0;
     uint64_t max_fall = 0;
     std::unique_ptr<track_video_color_metadata> mastering_metadata;
-
-    int32_t mask = 0;
 };
+
+const element_identify *get_track_video_color_identifies();
+
+constexpr uint32_t track_video_color_identifies_size = 14;
 
 
 struct track_video : public value_set_helper<track_video>
@@ -984,185 +591,8 @@ struct track_video : public value_set_helper<track_video>
 
     track_video &operator=(track_video &&)= default;
 
-    uint64_t get_flag_interlaced() const
-    {
-        return flag_interlaced;
-    }
-
-    void set_flag_interlaced(uint64_t flag_interlaced)
-    {
-        track_video::flag_interlaced = flag_interlaced;
-        mask |= FLAG_INTERLACED;
-    }
-
-    uint64_t get_field_order() const
-    {
-        return field_order;
-    }
-
-    void set_field_order(uint64_t field_order)
-    {
-        track_video::field_order = field_order;
-        mask |= FIELD_ORDER;
-    }
-
-    uint64_t get_stereo_mode() const
-    {
-        return stereo_mode;
-    }
-
-    void set_stereo_mode(uint64_t stereo_mode)
-    {
-        track_video::stereo_mode = stereo_mode;
-        mask |= STEREO_MODE;
-    }
-
-    uint64_t get_alpha_mode() const
-    {
-        return alpha_mode;
-    }
-
-    void set_alpha_mode(uint64_t alpha_mode)
-    {
-        track_video::alpha_mode = alpha_mode;
-        mask |= ALPHA_MODE;
-    }
-
-    uint64_t get_pixel_width() const
-    {
-        return pixel_width;
-    }
-
-    void set_pixel_width(uint64_t pixel_width)
-    {
-        track_video::pixel_width = pixel_width;
-        mask |= PIXEL_WIDTH;
-    }
-
-    uint64_t get_pixel_height() const
-    {
-        return pixel_height;
-    }
-
-    void set_pixel_height(uint64_t pixel_height)
-    {
-        track_video::pixel_height = pixel_height;
-        mask |= PIXEL_HEIGHT;
-    }
-
-    uint64_t get_pixel_crop_bottom() const
-    {
-        return pixel_crop_bottom;
-    }
-
-    void set_pixel_crop_bottom(uint64_t pixel_crop_bottom)
-    {
-        track_video::pixel_crop_bottom = pixel_crop_bottom;
-        mask |= PIXEL_CROP_BOTTOM;
-    }
-
-    uint64_t get_pixel_crop_top() const
-    {
-        return pixel_crop_top;
-    }
-
-    void set_pixel_crop_top(uint64_t pixel_crop_top)
-    {
-        track_video::pixel_crop_top = pixel_crop_top;
-        mask |= PIXEL_CROP_TOP;
-    }
-
-    uint64_t get_pixel_crop_left() const
-    {
-        return pixel_crop_left;
-    }
-
-    void set_pixel_crop_left(uint64_t pixel_crop_left)
-    {
-        track_video::pixel_crop_left = pixel_crop_left;
-        mask |= PIXEL_CROP_LEFT;
-    }
-
-    uint64_t get_pixel_crop_right() const
-    {
-        return pixel_crop_right;
-    }
-
-    void set_pixel_crop_right(uint64_t pixel_crop_right)
-    {
-        track_video::pixel_crop_right = pixel_crop_right;
-        mask |= PIXEL_CROP_RIGHT;
-    }
-
-    uint64_t get_display_width() const
-    {
-        return display_width;
-    }
-
-    void set_display_width(uint64_t display_width)
-    {
-        track_video::display_width = display_width;
-        mask |= DISPLAY_WIDTH;
-    }
-
-    uint64_t get_display_height() const
-    {
-        return display_height;
-    }
-
-    void set_display_height(uint64_t display_height)
-    {
-        track_video::display_height = display_height;
-        mask |= DISPLAY_HEIGHT;
-    }
-
-    uint64_t get_display_unit() const
-    {
-        return display_unit;
-    }
-
-    void set_display_unit(uint64_t display_unit)
-    {
-        track_video::display_unit = display_unit;
-        mask |= DISPLAY_UNIT;
-    }
-
-    uint64_t get_aspect_ratio_type() const
-    {
-        return aspect_ratio_type;
-    }
-
-    void set_aspect_ratio_type(uint64_t aspect_ratio_type)
-    {
-        track_video::aspect_ratio_type = aspect_ratio_type;
-        mask |= ASPECT_RATIO_TYPE;
-    }
-
-    const binary &get_color_space() const
-    {
-        return color_space;
-    }
-
-    void set_color_space(binary &&color_space)
-    {
-        track_video::color_space = std::move(color_space);
-        mask |= COLOR_SPACE;
-    }
-
-    const std::unique_ptr<track_video_color> &get_color() const
-    {
-        return color;
-    }
-
-    void set_color(std::unique_ptr<track_video_color> &&color)
-    {
-        track_video::color = std::move(color);
-        mask |= COLOR;
-    }
-
     USING_VALUE_METHOD(FLAG_INTERLACED | FIELD_ORDER | STEREO_MODE | ALPHA_MODE | PIXEL_CROP_BOTTOM | PIXEL_CROP_TOP | PIXEL_CROP_LEFT | PIXEL_CROP_RIGHT | DISPLAY_UNIT | ASPECT_RATIO_TYPE);
 
-private:
     uint64_t flag_interlaced = 0;
     uint64_t field_order = 2;
     uint64_t stereo_mode = 0;
@@ -1179,9 +609,11 @@ private:
     uint64_t aspect_ratio_type = 0;
     binary color_space;
     std::unique_ptr<track_video_color> color;
-
-    int32_t mask = 0;
 };
+
+const element_identify *get_track_video_identifies();
+
+constexpr uint32_t track_video_identifies_size = 16;
 
 
 struct track_audio : public value_set_helper<track_audio>
@@ -1196,60 +628,17 @@ struct track_audio : public value_set_helper<track_audio>
 
     track_audio() = default;
 
-    double get_sampling_frequency() const
-    {
-        return sampling_frequency;
-    }
-
-    void set_sampling_frequency(double sampling_frequency)
-    {
-        track_audio::sampling_frequency = sampling_frequency;
-        mask |= SAMPLING_FREQUENCY;
-    }
-
-    double get_output_sampling_frequency() const
-    {
-        return output_sampling_frequency;
-    }
-
-    void set_output_sampling_frequency(double output_sampling_frequency)
-    {
-        track_audio::output_sampling_frequency = output_sampling_frequency;
-        mask |= OUTPUT_SAMPLING_FREQUENCY;
-    }
-
-    uint64_t get_channels() const
-    {
-        return channels;
-    }
-
-    void set_channels(uint64_t channels)
-    {
-        track_audio::channels = channels;
-        mask |= CHANNELS;
-    }
-
-    uint64_t get_bit_depth() const
-    {
-        return bit_depth;
-    }
-
-    void set_bit_depth(uint64_t bit_depth)
-    {
-        track_audio::bit_depth = bit_depth;
-        mask |= BIT_DEPTH;
-    }
-
     USING_VALUE_METHOD(SAMPLING_FREQUENCY | CHANNELS);
 
-private:
     double sampling_frequency = 8000.0;
     double output_sampling_frequency = 8000.0;
     uint64_t channels = 1;
     uint64_t bit_depth = 0;
-
-    int32_t mask = 0;
 };
+
+const element_identify *get_track_audio_identifies();
+
+constexpr uint32_t track_audio_identifies_size = 4;
 
 
 struct track_operation_plane : public value_set_helper<track_operation_plane>
@@ -1262,36 +651,15 @@ struct track_operation_plane : public value_set_helper<track_operation_plane>
 
     track_operation_plane() = default;
 
-    uint64_t get_uid() const
-    {
-        return uid;
-    }
-
-    void set_uid(uint64_t uid)
-    {
-        track_operation_plane::uid = uid;
-        mask |= UID;
-    }
-
-    uint64_t get_type() const
-    {
-        return type;
-    }
-
-    void set_type(uint64_t type)
-    {
-        track_operation_plane::type = type;
-        mask |= TYPE;
-    }
-
     USING_VALUE_METHOD(0);
 
-private:
     uint64_t uid = 0;
     uint64_t type = 0;
-
-    int32_t mask = 0;
 };
+
+const element_identify *get_track_operation_plane_identifies();
+
+constexpr uint32_t track_operation_plane_identifies_size = 2;
 
 
 struct track_operation_combine_planes : public value_set_helper<track_operation_combine_planes>
@@ -1307,21 +675,15 @@ struct track_operation_combine_planes : public value_set_helper<track_operation_
 
     track_operation_combine_planes &operator=(track_operation_combine_planes &&)= default;
 
-    const std::vector<track_operation_plane> &get_track_planes() const { return track_planes; }
-
-    void set_track_planes(std::vector<track_operation_plane> &&v)
-    {
-        track_planes = std::move(v);
-        mask |= TRACK_PLANE;
-    }
-
     USING_VALUE_METHOD(0);
 
-private:
     std::vector<track_operation_plane> track_planes;
-
-    int32_t mask = 0;
 };
+
+const element_identify *get_track_operation_combine_planes_identifies();
+
+constexpr uint32_t track_operation_combine_planes_identifies_size = 1;
+
 
 struct track_operation_join_blocks : public value_set_helper<track_operation_join_blocks>
 {
@@ -1336,21 +698,14 @@ struct track_operation_join_blocks : public value_set_helper<track_operation_joi
 
     track_operation_join_blocks &operator=(track_operation_join_blocks &&)= default;
 
-    const std::vector<uint64_t> &get_uids() const { return uids; }
-
-    void set_uids(std::vector<uint64_t> &&v)
-    {
-        uids = std::move(v);
-        mask |= UID;
-    }
-
     USING_VALUE_METHOD(0);
 
-private:
     std::vector<uint64_t> uids;
-
-    int32_t mask = 0;
 };
+
+const element_identify *get_track_operation_join_blocks_identifies();
+
+constexpr uint32_t track_operation_join_blocks_identifies_size = 1;
 
 
 struct track_operation : public value_set_helper<track_operation>
@@ -1367,36 +722,15 @@ struct track_operation : public value_set_helper<track_operation>
 
     track_operation &operator=(track_operation &&)= default;
 
-    const track_operation_combine_planes &get_combine_planes() const
-    {
-        return combine_planes;
-    }
-
-    void set_combine_planes(track_operation_combine_planes &&combine_planes)
-    {
-        track_operation::combine_planes = std::move(combine_planes);
-        mask |= TRACK_COMBINE_PLANES;
-    }
-
-    const track_operation_join_blocks &get_join_blocks() const
-    {
-        return join_blocks;
-    }
-
-    void set_join_blocks(track_operation_join_blocks &&join_blocks)
-    {
-        track_operation::join_blocks = std::move(join_blocks);
-        mask |= TRACK_JOIN_BLOCKS;
-    }
-
     USING_VALUE_METHOD(0);
 
-private:
     track_operation_combine_planes combine_planes;
     track_operation_join_blocks join_blocks;
-
-    int32_t mask = 0;
 };
+
+const element_identify *get_track_operation_identifies();
+
+constexpr uint32_t track_operation_identifies_size = 2;
 
 
 struct track_content_compression : public value_set_helper<track_content_compression>
@@ -1413,37 +747,15 @@ struct track_content_compression : public value_set_helper<track_content_compres
 
     track_content_compression &operator=(track_content_compression &&)= default;
 
-public:
-    uint64_t get_algorithm() const
-    {
-        return algorithm;
-    }
-
-    void set_algorithm(uint64_t algorithm)
-    {
-        track_content_compression::algorithm = algorithm;
-        mask |= ALGORITHM;
-    }
-
-    const binary &get_settings() const
-    {
-        return settings;
-    }
-
-    void set_settings(binary &&settings)
-    {
-        track_content_compression::settings = std::move(settings);
-        mask |= SETTINGS;
-    }
-
     USING_VALUE_METHOD(ALGORITHM);
 
-private:
     uint64_t algorithm = 0;
     binary settings;
-
-    int32_t mask = 0;
 };
+
+const element_identify *get_track_content_compression_identifies();
+
+constexpr uint32_t track_content_compression_identifies_size = 2;
 
 
 struct track_content_encryption : public value_set_helper<track_content_encryption>
@@ -1464,85 +776,19 @@ struct track_content_encryption : public value_set_helper<track_content_encrypti
 
     track_content_encryption &operator=(track_content_encryption &&)= default;
 
-public:
-    uint64_t get_algorithm() const
-    {
-        return algorithm;
-    }
-
-    void set_algorithm(uint64_t algorithm)
-    {
-        track_content_encryption::algorithm = algorithm;
-        mask |= ALGORITHM;
-    }
-
-    const binary &get_key_id() const
-    {
-        return key_id;
-    }
-
-    void set_key_id(binary &&key_id)
-    {
-        track_content_encryption::key_id = std::move(key_id);
-        mask |= KEY_ID;
-    }
-
-    const binary &get_signature() const
-    {
-        return signature;
-    }
-
-    void set_signature(binary &&signature)
-    {
-        track_content_encryption::signature = std::move(signature);
-        mask |= SIGNATURE;
-    }
-
-    const binary &get_sig_key_id() const
-    {
-        return sig_key_id;
-    }
-
-    void set_sig_key_id(binary &&sig_key_id)
-    {
-        track_content_encryption::sig_key_id = std::move(sig_key_id);
-        mask |= SIG_KEY_ID;
-    }
-
-    uint64_t get_sig_algorithm() const
-    {
-        return sig_algorithm;
-    }
-
-    void set_sig_algorithm(uint64_t sig_algorithm)
-    {
-        track_content_encryption::sig_algorithm = sig_algorithm;
-        mask |= SIG_ALGORITHM;
-    }
-
-    uint64_t get_sig_hash_algorithm() const
-    {
-        return sig_hash_algorithm;
-    }
-
-    void set_sig_hash_algorithm(uint64_t sig_hash_algorithm)
-    {
-        track_content_encryption::sig_hash_algorithm = sig_hash_algorithm;
-        mask |= SIG_HASH_ALGORITHM;
-    }
-
     USING_VALUE_METHOD(ALGORITHM | SIG_ALGORITHM | SIG_HASH_ALGORITHM);
 
-private:
     uint64_t algorithm = 0;
     binary key_id;
     binary signature;
     binary sig_key_id;
     uint64_t sig_algorithm = 0;
     uint64_t sig_hash_algorithm = 0;
-
-    int32_t mask = 0;
 };
+
+const element_identify *get_track_content_encryption_identifies();
+
+constexpr uint32_t track_content_encryption_identifies_size = 6;
 
 
 struct track_content_encoding : public value_set_helper<track_content_encoding>
@@ -1562,73 +808,18 @@ struct track_content_encoding : public value_set_helper<track_content_encoding>
 
     track_content_encoding &operator=(track_content_encoding &&)= default;
 
-public:
-    uint64_t get_order() const
-    {
-        return order;
-    }
-
-    void set_order(uint64_t order)
-    {
-        track_content_encoding::order = order;
-        mask |= ORDER;
-    }
-
-    uint64_t get_scope() const
-    {
-        return scope;
-    }
-
-    void set_scope(uint64_t scope)
-    {
-        track_content_encoding::scope = scope;
-        mask |= SCOPE;
-    }
-
-    uint64_t get_type() const
-    {
-        return type;
-    }
-
-    void set_type(uint64_t type)
-    {
-        track_content_encoding::type = type;
-        mask |= TYPE;
-    }
-
-    const std::unique_ptr<track_content_compression> &get_compression() const
-    {
-        return compression;
-    }
-
-    void set_compression(std::unique_ptr<track_content_compression> &&compression)
-    {
-        track_content_encoding::compression = std::move(compression);
-        mask |= COMPRESSION;
-    }
-
-    const std::unique_ptr<track_content_encryption> &get_encryption() const
-    {
-        return encryption;
-    }
-
-    void set_encryption(std::unique_ptr<track_content_encryption> &&encryption)
-    {
-        track_content_encoding::encryption = std::move(encryption);
-        mask |= ENCRYPTION;
-    }
-
     USING_VALUE_METHOD(ORDER | SCOPE | TYPE);
 
-private:
     uint64_t order = 0;
     uint64_t scope = 1;
     uint64_t type = 0;
     std::unique_ptr<track_content_compression> compression;
     std::unique_ptr<track_content_encryption> encryption;
-
-    int32_t mask = 0;
 };
+
+const element_identify *get_track_content_encoding_identifies();
+
+constexpr uint32_t track_content_encoding_identifies_size = 5;
 
 
 struct track_content_encodings : public value_set_helper<track_content_encodings>
@@ -1644,21 +835,14 @@ struct track_content_encodings : public value_set_helper<track_content_encodings
 
     track_content_encodings &operator=(track_content_encodings &&)= default;
 
-    const ::std::list<track_content_encoding> &get_content_encodings() const { return content_encodings; }
-
-    void set_content_encodings(std::list<track_content_encoding> &&v)
-    {
-        content_encodings = std::move(v);
-        mask |= CONTENT_ENCODING;
-    }
-
     USING_VALUE_METHOD(0);
 
-private:
     std::list<track_content_encoding> content_encodings;
-
-    int32_t mask = 0;
 };
+
+const element_identify *get_track_content_encodings_identifies();
+
+constexpr uint32_t track_content_encodings_identifies_size = 1;
 
 
 struct track_entry : public value_set_helper<track_entry>
@@ -1700,307 +884,8 @@ struct track_entry : public value_set_helper<track_entry>
 
     track_entry &operator=(track_entry &&)= default;
 
-public:
-    uint64_t get_number() const
-    {
-        return number;
-    }
-
-    void set_number(uint64_t number)
-    {
-        track_entry::number = number;
-        mask |= NUMBER;
-    }
-
-    uint64_t get_uid() const
-    {
-        return uid;
-    }
-
-    void set_uid(uint64_t uid)
-    {
-        track_entry::uid = uid;
-        mask |= UID;
-    }
-
-    uint64_t get_type() const
-    {
-        return type;
-    }
-
-    void set_type(uint64_t type)
-    {
-        track_entry::type = type;
-        mask |= TYPE;
-    }
-
-    uint64_t get_flag_enabled() const
-    {
-        return flag_enabled;
-    }
-
-    void set_flag_enabled(uint64_t flag_enabled)
-    {
-        track_entry::flag_enabled = flag_enabled;
-        mask |= FLAG_ENABLED;
-    }
-
-    uint64_t get_flag_default() const
-    {
-        return flag_default;
-    }
-
-    void set_flag_default(uint64_t flag_default)
-    {
-        track_entry::flag_default = flag_default;
-        mask |= FLAG_DEFAULT;
-    }
-
-    uint64_t get_flag_forced() const
-    {
-        return flag_forced;
-    }
-
-    void set_flag_forced(uint64_t flag_forced)
-    {
-        track_entry::flag_forced = flag_forced;
-        mask |= FLAG_FORCED;
-    }
-
-    uint64_t get_flag_lacing() const
-    {
-        return flag_lacing;
-    }
-
-    void set_flag_lacing(uint64_t flag_lacing)
-    {
-        track_entry::flag_lacing = flag_lacing;
-        mask |= FLAG_LACING;
-    }
-
-    uint64_t get_min_cache() const
-    {
-        return min_cache;
-    }
-
-    void set_min_cache(uint64_t min_cache)
-    {
-        track_entry::min_cache = min_cache;
-        mask |= MIN_CACHE;
-    }
-
-    uint64_t get_max_cache() const
-    {
-        return max_cache;
-    }
-
-    void set_max_cache(uint64_t max_cache)
-    {
-        track_entry::max_cache = max_cache;
-        mask |= MAX_CACHE;
-    }
-
-    uint64_t get_default_duration() const
-    {
-        return default_duration;
-    }
-
-    void set_default_duration(uint64_t default_duration)
-    {
-        track_entry::default_duration = default_duration;
-        mask |= DEFAULT_DURATION;
-    }
-
-    uint64_t get_default_decoded_field_duration() const
-    {
-        return default_decoded_field_duration;
-    }
-
-    void set_default_decoded_field_duration(uint64_t default_decoded_field_duration)
-    {
-        track_entry::default_decoded_field_duration = default_decoded_field_duration;
-        mask |= DEFAULT_DECODED_FIELD_DURATION;
-    }
-
-    uint64_t get_max_block_addition_id() const
-    {
-        return max_block_addition_id;
-    }
-
-    void set_max_block_addition_id(uint64_t max_block_addition_id)
-    {
-        track_entry::max_block_addition_id = max_block_addition_id;
-        mask |= MAX_BLOCK_ADDITION_ID;
-    }
-
-    const std::string &get_name() const
-    {
-        return name;
-    }
-
-    void set_name(std::string &&name)
-    {
-        track_entry::name = std::move(name);
-        mask |= NAME;
-    }
-
-    const std::string &get_language() const
-    {
-        return language;
-    }
-
-    void set_language(std::string &&language)
-    {
-        track_entry::language = std::move(language);
-        mask |= LANGUAGE;
-    }
-
-    const std::string &get_codec_id() const
-    {
-        return codec_id;
-    }
-
-    void set_codec_id(std::string &&codec_id)
-    {
-        track_entry::codec_id = std::move(codec_id);
-        mask |= CODEC_ID;
-    }
-
-    const binary &get_codec_private() const
-    {
-        return codec_private;
-    }
-
-    void set_codec_private(binary &&codec_private)
-    {
-        track_entry::codec_private = std::move(codec_private);
-        mask |= CODEC_PRIVATE;
-    }
-
-    const std::string &get_codec_name() const
-    {
-        return codec_name;
-    }
-
-    void set_codec_name(std::string &&codec_name)
-    {
-        track_entry::codec_name = std::move(codec_name);
-        mask |= CODEC_NAME;
-    }
-
-    uint64_t get_attachment_link() const
-    {
-        return attachment_link;
-    }
-
-    void set_attachment_link(uint64_t attachment_link)
-    {
-        track_entry::attachment_link = attachment_link;
-        mask |= ATTACHMENT_LINK;
-    }
-
-    uint64_t get_codec_decode_all() const
-    {
-        return codec_decode_all;
-    }
-
-    void set_codec_decode_all(uint64_t codec_decode_all)
-    {
-        track_entry::codec_decode_all = codec_decode_all;
-        mask |= CODEC_DECODE_ALL;
-    }
-
-    const std::vector<uint64_t> &get_overlays() const
-    {
-        return overlays;
-    }
-
-    void set_overlays(std::vector<uint64_t> &&overlays)
-    {
-        track_entry::overlays = std::move(overlays);
-        mask |= OVERLAY;
-    }
-
-    uint64_t get_codec_delay() const
-    {
-        return codec_delay;
-    }
-
-    void set_codec_delay(uint64_t codec_delay)
-    {
-        track_entry::codec_delay = codec_delay;
-        mask |= CODEC_DELAY;
-    }
-
-    uint64_t get_seek_pre_roll() const
-    {
-        return seek_pre_roll;
-    }
-
-    void set_seek_pre_roll(uint64_t seek_pre_roll)
-    {
-        track_entry::seek_pre_roll = seek_pre_roll;
-        mask |= SEEK_PRE_ROLL;
-    }
-
-    const std::list<track_translate> &get_translate() const
-    {
-        return translate;
-    }
-
-    void set_translate(std::list<track_translate> &&translate)
-    {
-        track_entry::translate = std::move(translate);
-        mask |= TRANSLATE;
-    }
-
-    const std::unique_ptr<track_video> &get_video() const
-    {
-        return video;
-    }
-
-    void set_video(std::unique_ptr<track_video> &&video)
-    {
-        track_entry::video = std::move(video);
-        mask |= VIDEO;
-    }
-
-    const std::unique_ptr<track_audio> &get_audio() const
-    {
-        return audio;
-    }
-
-    void set_audio(std::unique_ptr<track_audio> &&audio)
-    {
-        track_entry::audio = std::move(audio);
-        mask |= AUDIO;
-    }
-
-    const std::unique_ptr<track_operation> &get_operation() const
-    {
-        return operation;
-    }
-
-    void set_operation(std::unique_ptr<track_operation> &&operation)
-    {
-        track_entry::operation = std::move(operation);
-        mask |= OPERATION;
-    }
-
-    const std::unique_ptr<track_content_encodings> &get_content_encodings() const
-    {
-        return content_encodings;
-    }
-
-    void set_content_encodings(std::unique_ptr<track_content_encodings> &&content_encodings)
-    {
-        track_entry::content_encodings = std::move(content_encodings);
-        mask |= CONTENT_ENCODINGS;
-    }
-
     USING_VALUE_METHOD(FLAG_ENABLED | FLAG_DEFAULT | FLAG_FORCED | FLAG_LACING | MIN_CACHE | MAX_BLOCK_ADDITION_ID | LANGUAGE | CODEC_DECODE_ALL | CODEC_DELAY | SEEK_PRE_ROLL);
 
-private:
     uint64_t number = 0;
     uint64_t uid = 0;
     uint64_t type = 0;
@@ -2028,9 +913,11 @@ private:
     std::unique_ptr<track_audio> audio;
     std::unique_ptr<track_operation> operation;
     std::unique_ptr<track_content_encodings> content_encodings;
-
-    int32_t mask = 0;
 };
+
+const element_identify *get_track_entry_identifies();
+
+constexpr uint32_t track_entry_identifies_size = 27;
 
 
 struct track : public value_set_helper<track>
@@ -2046,24 +933,14 @@ struct track : public value_set_helper<track>
 
     track &operator=(track &&)= default;
 
-    const std::list<track_entry> &get_entries() const
-    {
-        return entries;
-    }
-
-    void set_entries(std::list<track_entry> &&entries)
-    {
-        track::entries = std::move(entries);
-        mask |= TRACK_ENTRY;
-    }
-
     USING_VALUE_METHOD(0);
 
-private:
     std::list<track_entry> entries;
-
-    int32_t mask = 0;
 };
+
+const element_identify *get_track_identifies();
+
+constexpr uint32_t track_identifies_size = 1;
 
 
 struct cue_track_reference : public value_set_helper<cue_track_reference>
@@ -2075,25 +952,14 @@ struct cue_track_reference : public value_set_helper<cue_track_reference>
 
     cue_track_reference() = default;
 
-public:
-    uint64_t get_ref_time() const
-    {
-        return ref_time;
-    }
-
-    void set_ref_time(uint64_t ref_time)
-    {
-        cue_track_reference::ref_time = ref_time;
-        mask |= REF_TIME;
-    }
-
     USING_VALUE_METHOD(0);
 
-private:
     uint64_t ref_time = 0;
-
-    int32_t mask = 0;
 };
+
+const element_identify *get_cue_track_reference_identifies();
+
+constexpr uint32_t cue_track_reference_identifies_size = 1;
 
 
 struct cue_track_position : public value_set_helper<cue_track_position>
@@ -2115,87 +981,8 @@ struct cue_track_position : public value_set_helper<cue_track_position>
 
     cue_track_position &operator=(cue_track_position &&)= default;
 
-public:
-    uint64_t get_track() const
-    {
-        return track;
-    }
-
-    void set_track(uint64_t track)
-    {
-        cue_track_position::track = track;
-        mask |= TRACK;
-    }
-
-    uint64_t get_cluster_position() const
-    {
-        return cluster_position;
-    }
-
-    void set_cluster_position(uint64_t cluster_position)
-    {
-        cue_track_position::cluster_position = cluster_position;
-        mask |= CLUSTER_POSITION;
-    }
-
-    uint64_t get_relative_position() const
-    {
-        return relative_position;
-    }
-
-    void set_relative_position(uint64_t relative_position)
-    {
-        cue_track_position::relative_position = relative_position;
-        mask |= RELATIVE_POSITION;
-    }
-
-    uint64_t get_duration() const
-    {
-        return duration;
-    }
-
-    void set_duration(uint64_t duration)
-    {
-        cue_track_position::duration = duration;
-        mask |= DURATION;
-    }
-
-    uint64_t get_block_number() const
-    {
-        return block_number;
-    }
-
-    void set_block_number(uint64_t block_number)
-    {
-        cue_track_position::block_number = block_number;
-        mask |= BLOCK_NUMBER;
-    }
-
-    uint64_t get_codec_state() const
-    {
-        return codec_state;
-    }
-
-    void set_codec_state(uint64_t codec_state)
-    {
-        cue_track_position::codec_state = codec_state;
-        mask |= CODEC_STATE;
-    }
-
-    const std::list<cue_track_reference> &get_references() const
-    {
-        return references;
-    }
-
-    void set_references(std::list<cue_track_reference> &&references)
-    {
-        cue_track_position::references = std::move(references);
-        mask |= REFERENCE;
-    }
-
     USING_VALUE_METHOD(BLOCK_NUMBER | CODEC_STATE);
 
-private:
     uint64_t track = 0;
     uint64_t cluster_position = 0;
     uint64_t relative_position = 0;
@@ -2203,9 +990,11 @@ private:
     uint64_t block_number = 1;
     uint64_t codec_state = 0;
     std::list<cue_track_reference> references;
-
-    int32_t mask = 0;
 };
+
+const element_identify *get_cue_track_position_identifies();
+
+constexpr uint32_t cue_track_position_identifies_size = 7;
 
 
 struct cue_point : public value_set_helper<cue_point>
@@ -2222,37 +1011,15 @@ struct cue_point : public value_set_helper<cue_point>
 
     cue_point &operator=(cue_point &&)= default;
 
-public:
-    uint64_t get_time() const
-    {
-        return time;
-    }
-
-    void set_time(uint64_t time)
-    {
-        cue_point::time = time;
-        mask |= TIME;
-    }
-
-    const std::list<cue_track_position> &get_track_positions() const
-    {
-        return track_positions;
-    }
-
-    void set_track_positions(std::list<cue_track_position> &&track_positions)
-    {
-        cue_point::track_positions = std::move(track_positions);
-        mask |= TRACK_POSITIONS;
-    }
-
     USING_VALUE_METHOD(0);
 
-private:
     uint64_t time = 0;
     std::list<cue_track_position> track_positions;
-
-    int32_t mask = 0;
 };
+
+const element_identify *get_cue_point_identifies();
+
+constexpr uint32_t cue_point_identifies_size = 2;
 
 
 struct cue : public value_set_helper<cue>
@@ -2268,25 +1035,14 @@ struct cue : public value_set_helper<cue>
 
     cue &operator=(cue &&)= default;
 
-public:
-    const std::list<cue_point> &get_cue_points() const
-    {
-        return cue_points;
-    }
-
-    void set_cue_points(std::list<cue_point> &&cue_points)
-    {
-        cue::cue_points = std::move(cue_points);
-        mask |= CUE_POINT;
-    }
-
     USING_VALUE_METHOD(0);
 
-private:
     std::list<cue_point> cue_points;
-
-    int32_t mask = 0;
 };
+
+const element_identify *get_cue_identifies();
+
+constexpr uint32_t cue_identifies_size = 1;
 
 
 struct attached_file : public value_set_helper<attached_file>
@@ -2306,73 +1062,18 @@ struct attached_file : public value_set_helper<attached_file>
 
     attached_file &operator=(attached_file &&)= default;
 
-public:
-    const std::string &get_description() const
-    {
-        return description;
-    }
-
-    void set_description(std::string &&description)
-    {
-        attached_file::description = std::move(description);
-        mask |= DESCRIPTION;
-    }
-
-    const std::string &get_name() const
-    {
-        return name;
-    }
-
-    void set_name(std::string &&name)
-    {
-        attached_file::name = std::move(name);
-        mask |= NAME;
-    }
-
-    const std::string &get_mine_type() const
-    {
-        return mine_type;
-    }
-
-    void set_mine_type(std::string &&mine_type)
-    {
-        attached_file::mine_type = std::move(mine_type);
-        mask |= MINE_TYPE;
-    }
-
-    const binary &get_data() const
-    {
-        return data;
-    }
-
-    void set_data(binary &&data)
-    {
-        attached_file::data = std::move(data);
-        mask |= DATA;
-    }
-
-    uint64_t get_uid() const
-    {
-        return uid;
-    }
-
-    void set_uid(uint64_t uid)
-    {
-        attached_file::uid = uid;
-        mask |= UID;
-    }
-
     USING_VALUE_METHOD(0);
 
-private:
     std::string description;
     std::string name;
     std::string mine_type;
     binary data;
     uint64_t uid = 0;
-
-    int32_t mask = 0;
 };
+
+const element_identify *get_attached_file_identifies();
+
+constexpr uint32_t attached_file_identifies_size = 5;
 
 
 struct attachment : public value_set_helper<attachment>
@@ -2388,25 +1089,14 @@ struct attachment : public value_set_helper<attachment>
 
     attachment &operator=(attachment &&)= default;
 
-public:
-    const std::list<attached_file> &get_attached_files() const
-    {
-        return attached_files;
-    }
-
-    void set_attached_files(std::list<attached_file> &&attached_files)
-    {
-        attachment::attached_files = std::move(attached_files);
-        mask |= ATTACHED_FILE;
-    }
-
     USING_VALUE_METHOD(0);
 
-private:
     std::list<attached_file> attached_files;
-
-    int32_t mask = 0;
 };
+
+const element_identify *get_attachment_identifies();
+
+constexpr uint32_t attachment_identifies_size = 1;
 
 
 struct chapter_track : public value_set_helper<chapter_track>
@@ -2422,25 +1112,14 @@ struct chapter_track : public value_set_helper<chapter_track>
 
     chapter_track &operator=(chapter_track &&)= default;
 
-public:
-    const std::vector<uint64_t> &get_track_numbers() const
-    {
-        return track_numbers;
-    }
-
-    void set_track_numbers(std::vector<uint64_t> &&track_numbers)
-    {
-        chapter_track::track_numbers = std::move(track_numbers);
-        mask |= TRACK_NUMBER;
-    }
-
     USING_VALUE_METHOD(0);
 
-private:
     std::vector<uint64_t> track_numbers;
-
-    int32_t mask = 0;
 };
+
+const element_identify *get_chapter_track_identifies();
+
+constexpr uint32_t chapter_track_identifies_size = 1;
 
 
 struct chapter_display : public value_set_helper<chapter_display>
@@ -2458,49 +1137,16 @@ struct chapter_display : public value_set_helper<chapter_display>
 
     chapter_display &operator=(chapter_display &&)= default;
 
-public:
-    const std::string &get_string() const
-    {
-        return string;
-    }
-
-    void set_string(std::string &&string)
-    {
-        chapter_display::string = std::move(string);
-        mask |= STRING;
-    }
-
-    const std::list<std::string> &get_languages() const
-    {
-        return languages;
-    }
-
-    void set_languages(std::list<std::string> &&languages)
-    {
-        chapter_display::languages = std::move(languages);
-        mask |= LANGUAGE;
-    }
-
-    const std::list<std::string> &get_countries() const
-    {
-        return countries;
-    }
-
-    void set_countries(std::list<std::string> &&countries)
-    {
-        chapter_display::countries = std::move(countries);
-        mask |= COUNTRY;
-    }
-
     USING_VALUE_METHOD(0);
 
-private:
     std::string string;
     std::list<std::string> languages;
     std::list<std::string> countries;
-
-    int32_t mask = 0;
 };
+
+const element_identify *get_chapter_display_identifies();
+
+constexpr uint32_t chapter_display_identifies_size = 3;
 
 
 struct chapter_process_command : public value_set_helper<chapter_process_command>
@@ -2517,37 +1163,15 @@ struct chapter_process_command : public value_set_helper<chapter_process_command
 
     chapter_process_command &operator=(chapter_process_command &&)= default;
 
-public:
-    uint64_t get_time() const
-    {
-        return time;
-    }
-
-    void set_time(uint64_t time)
-    {
-        chapter_process_command::time = time;
-        mask |= TIME;
-    }
-
-    const binary &get_data() const
-    {
-        return data;
-    }
-
-    void set_data(binary &&data)
-    {
-        chapter_process_command::data = std::move(data);
-        mask |= DATA;
-    }
-
     USING_VALUE_METHOD(0);
 
-private:
     uint64_t time = 0;
     binary data;
-
-    int32_t mask = 0;
 };
+
+const element_identify *get_chapter_process_command_identifies();
+
+constexpr uint32_t chapter_process_command_identifies_size = 2;
 
 
 struct chapter_process : public value_set_helper<chapter_process>
@@ -2565,49 +1189,16 @@ struct chapter_process : public value_set_helper<chapter_process>
 
     chapter_process &operator=(chapter_process &&)= default;
 
-public:
-    uint64_t get_codec_id() const
-    {
-        return codec_id;
-    }
-
-    void set_codec_id(uint64_t codec_id)
-    {
-        chapter_process::codec_id = codec_id;
-        mask |= CODEC_ID;
-    }
-
-    const binary &get_process_private() const
-    {
-        return process_private;
-    }
-
-    void set_process_private(binary &&process_private)
-    {
-        chapter_process::process_private = std::move(process_private);
-        mask |= PRIVATE;
-    }
-
-    const std::list<chapter_process_command> &get_commands() const
-    {
-        return commands;
-    }
-
-    void set_commands(std::list<chapter_process_command> &&commands)
-    {
-        chapter_process::commands = std::move(commands);
-        mask |= COMMAND;
-    }
-
     USING_VALUE_METHOD(CODEC_ID);
 
-private:
     uint64_t codec_id = 0;
     binary process_private;
     std::list<chapter_process_command> commands;
-
-    int32_t mask = 0;
 };
+
+const element_identify *get_chapter_process_identifies();
+
+constexpr uint32_t chapter_process_identifies_size = 3;
 
 
 struct chapter_atom : public value_set_helper<chapter_atom>
@@ -2635,153 +1226,8 @@ struct chapter_atom : public value_set_helper<chapter_atom>
 
     chapter_atom &operator=(chapter_atom &&)= default;
 
-public:
-    const std::list<chapter_atom> &get_atoms() const
-    {
-        return atoms;
-    }
-
-    void set_atoms(std::list<chapter_atom> &&atoms)
-    {
-        chapter_atom::atoms = std::move(atoms);
-        mask |= CHAPTER_ATOM;
-    }
-
-    uint64_t get_uid() const
-    {
-        return uid;
-    }
-
-    void set_uid(uint64_t uid)
-    {
-        chapter_atom::uid = uid;
-        mask |= UID;
-    }
-
-    const std::string &get_string_uid() const
-    {
-        return string_uid;
-    }
-
-    void set_string_uid(std::string &&string_uid)
-    {
-        chapter_atom::string_uid = std::move(string_uid);
-        mask |= STRING_UID;
-    }
-
-    uint64_t get_time_start() const
-    {
-        return time_start;
-    }
-
-    void set_time_start(uint64_t time_start)
-    {
-        chapter_atom::time_start = time_start;
-        mask |= TIME_START;
-    }
-
-    uint64_t get_time_end() const
-    {
-        return time_end;
-    }
-
-    void set_time_end(uint64_t time_end)
-    {
-        chapter_atom::time_end = time_end;
-        mask |= TIME_END;
-    }
-
-    uint64_t get_flag_hidden() const
-    {
-        return flag_hidden;
-    }
-
-    void set_flag_hidden(uint64_t flag_hidden)
-    {
-        chapter_atom::flag_hidden = flag_hidden;
-        mask |= FLAG_HIDDEN;
-    }
-
-    uint64_t get_flag_enabled() const
-    {
-        return flag_enabled;
-    }
-
-    void set_flag_enabled(uint64_t flag_enabled)
-    {
-        chapter_atom::flag_enabled = flag_enabled;
-        mask |= FLAG_ENABLED;
-    }
-
-    const binary &get_segment_uid() const
-    {
-        return segment_uid;
-    }
-
-    void set_segment_uid(binary &&segment_uid)
-    {
-        chapter_atom::segment_uid = std::move(segment_uid);
-        mask |= SEGMENT_UID;
-    }
-
-    uint64_t get_segment_edition_uid() const
-    {
-        return segment_edition_uid;
-    }
-
-    void set_segment_edition_uid(uint64_t segment_edition_uid)
-    {
-        chapter_atom::segment_edition_uid = segment_edition_uid;
-        mask |= SEGMENT_EDITION_UID;
-    }
-
-    uint64_t get_physical_equiv() const
-    {
-        return physical_equiv;
-    }
-
-    void set_physical_equiv(uint64_t physical_equiv)
-    {
-        chapter_atom::physical_equiv = physical_equiv;
-        mask |= PHYSICAL_EQUIV;
-    }
-
-    const chapter_track &get_track() const
-    {
-        return track;
-    }
-
-    void set_track(chapter_track &&track)
-    {
-        chapter_atom::track = std::move(track);
-        mask |= TRACK;
-    }
-
-    const std::list<chapter_display> &get_displays() const
-    {
-        return displays;
-    }
-
-    void set_displays(std::list<chapter_display> &&displays)
-    {
-        chapter_atom::displays = std::move(displays);
-        mask |= DISPLAY;
-    }
-
-    const std::list<chapter_process> &get_processes() const
-    {
-        return processes;
-    }
-
-    void set_processes(std::list<chapter_process> &&processes)
-    {
-        chapter_atom::processes = std::move(processes);
-        mask |= PROCESS;
-    }
-
     USING_VALUE_METHOD(FLAG_HIDDEN | FLAG_ENABLED);
 
-private:
     std::list<chapter_atom> atoms;
     uint64_t uid = 0;
     std::string string_uid;
@@ -2795,9 +1241,11 @@ private:
     chapter_track track;
     std::list<chapter_display> displays;
     std::list<chapter_process> processes;
-
-    int32_t mask = 0;
 };
+
+const element_identify *get_chapter_atom_identifies();
+
+constexpr uint32_t chapter_atom_identifies_size = 13;
 
 
 struct chapter_edition_entry : public value_set_helper<chapter_edition_entry>
@@ -2817,73 +1265,18 @@ struct chapter_edition_entry : public value_set_helper<chapter_edition_entry>
 
     chapter_edition_entry &operator=(chapter_edition_entry &&)= default;
 
-public:
-    uint64_t get_uid() const
-    {
-        return uid;
-    }
-
-    void set_uid(uint64_t uid)
-    {
-        chapter_edition_entry::uid = uid;
-        mask |= UID;
-    }
-
-    uint64_t get_flag_hidden() const
-    {
-        return flag_hidden;
-    }
-
-    void set_flag_hidden(uint64_t flag_hidden)
-    {
-        chapter_edition_entry::flag_hidden = flag_hidden;
-        mask |= FLAG_HIDDEN;
-    }
-
-    uint64_t get_flag_default() const
-    {
-        return flag_default;
-    }
-
-    void set_flag_default(uint64_t flag_default)
-    {
-        chapter_edition_entry::flag_default = flag_default;
-        mask |= FLAG_DEFAULT;
-    }
-
-    uint64_t get_flag_ordered() const
-    {
-        return flag_ordered;
-    }
-
-    void set_flag_ordered(uint64_t flag_ordered)
-    {
-        chapter_edition_entry::flag_ordered = flag_ordered;
-        mask |= FLAG_ORDERED;
-    }
-
-    const std::list<chapter_atom> &get_chapter_atoms() const
-    {
-        return chapter_atoms;
-    }
-
-    void set_chapter_atoms(std::list<chapter_atom> &&chapter_atoms)
-    {
-        chapter_edition_entry::chapter_atoms = std::move(chapter_atoms);
-        mask |= CHAPTER_ATOM;
-    }
-
     USING_VALUE_METHOD(FLAG_HIDDEN | FLAG_DEFAULT | FLAG_ORDERED);
 
-private:
     uint64_t uid = 0;
     uint64_t flag_hidden = 0;
     uint64_t flag_default = 0;
     uint64_t flag_ordered = 0;
     std::list<chapter_atom> chapter_atoms;
-
-    int32_t mask = 0;
 };
+
+const element_identify *get_chapter_edition_entry_identifies();
+
+constexpr uint32_t chapter_edition_entry_identifies_size = 5;
 
 
 struct chapter : public value_set_helper<chapter>
@@ -2899,25 +1292,14 @@ struct chapter : public value_set_helper<chapter>
 
     chapter &operator=(chapter &&)= default;
 
-public:
-    const std::list<chapter_edition_entry> &get_edition_entries() const
-    {
-        return edition_entries;
-    }
-
-    void set_edition_entries(std::list<chapter_edition_entry> &&edition_entries)
-    {
-        chapter::edition_entries = std::move(edition_entries);
-        mask |= EDITION_ENTRY;
-    }
-
     USING_VALUE_METHOD(0);
 
-private:
     std::list<chapter_edition_entry> edition_entries;
-
-    int32_t mask = 0;
 };
+
+const element_identify *get_chapter_identifies();
+
+constexpr uint32_t chapter_identifies_size = 1;
 
 
 struct tag_target : public value_set_helper<tag_target>
@@ -2935,49 +1317,16 @@ struct tag_target : public value_set_helper<tag_target>
 
     tag_target &operator=(tag_target &&)= default;
 
-public:
-    uint64_t get_type_value() const
-    {
-        return type_value;
-    }
-
-    void set_type_value(uint64_t type_value)
-    {
-        tag_target::type_value = type_value;
-        mask |= TYPE_VALUE;
-    }
-
-    const std::string &get_type() const
-    {
-        return type;
-    }
-
-    void set_type(std::string &&type)
-    {
-        tag_target::type = std::move(type);
-        mask |= TYPE;
-    }
-
-    const std::vector<uint64_t> &get_uids() const
-    {
-        return uids;
-    }
-
-    void set_uids(std::vector<uint64_t> &&uids)
-    {
-        tag_target::uids = std::move(uids);
-        mask |= UID;
-    }
-
     USING_VALUE_METHOD(TYPE_VALUE);
 
-private:
     uint64_t type_value = 50;
     std::string type;
     std::vector<uint64_t> uids;
-
-    int32_t mask = 0;
 };
+
+const element_identify *get_tag_target_identifies();
+
+constexpr uint32_t tag_target_identifies_size = 3;
 
 
 struct simple_tag : public value_set_helper<simple_tag>
@@ -2998,85 +1347,19 @@ struct simple_tag : public value_set_helper<simple_tag>
 
     simple_tag &operator=(simple_tag &&)= default;
 
-public:
-    const std::list<simple_tag> &get_tags() const
-    {
-        return tags;
-    }
-
-    void set_tags(std::list<simple_tag> &&tags)
-    {
-        simple_tag::tags = std::move(tags);
-        mask |= SIMPLE_TAG;
-    }
-
-    const std::string &get_name() const
-    {
-        return name;
-    }
-
-    void set_name(std::string &&name)
-    {
-        simple_tag::name = std::move(name);
-        mask |= NAME;
-    }
-
-    const std::string &get_language() const
-    {
-        return language;
-    }
-
-    void set_language(std::string &&language)
-    {
-        simple_tag::language = std::move(language);
-        mask |= LANGUAGE;
-    }
-
-    uint64_t get_tag_default() const
-    {
-        return tag_default;
-    }
-
-    void set_tag_default(uint64_t tag_default)
-    {
-        simple_tag::tag_default = tag_default;
-        mask |= DEFAULT;
-    }
-
-    const std::string &get_string() const
-    {
-        return string;
-    }
-
-    void set_string(std::string &&string)
-    {
-        simple_tag::string = std::move(string);
-        mask |= STRING;
-    }
-
-    const binary &get_bin() const
-    {
-        return bin;
-    }
-
-    void set_bin(binary &&bin)
-    {
-        simple_tag::bin = std::move(bin);
-        mask |= BINARY;
-    }
-
     USING_VALUE_METHOD(LANGUAGE | DEFAULT);
 
-private:
     std::list<simple_tag> tags;
     std::string name;
     std::string language;
     uint64_t tag_default = 1;
     std::string string;
     binary bin;
-
-    int32_t mask = 0;
 };
+
+const element_identify *get_simple_tag_identifies();
+
+constexpr uint32_t simple_tag_identifies_size = 6;
 
 
 struct tag : public value_set_helper<tag>
@@ -3093,37 +1376,15 @@ struct tag : public value_set_helper<tag>
 
     tag &operator=(tag &&)= default;
 
-public:
-    const tag_target &get_target() const
-    {
-        return target;
-    }
-
-    void set_target(tag_target &&target)
-    {
-        tag::target = std::move(target);
-        mask |= TARGETS;
-    }
-
-    const std::list<simple_tag> &get_simple_tags() const
-    {
-        return simple_tags;
-    }
-
-    void set_simple_tags(std::list<simple_tag> &&simple_tags)
-    {
-        tag::simple_tags = std::move(simple_tags);
-        mask |= SIMPLE_TAG;
-    }
-
     USING_VALUE_METHOD(0);
 
-private:
     tag_target target;
     std::list<simple_tag> simple_tags;
-
-    int32_t mask = 0;
 };
+
+const element_identify *get_tag_identifies();
+
+constexpr uint32_t tag_identifies_size = 2;
 
 
 struct tags : public value_set_helper<tags>
@@ -3139,25 +1400,14 @@ struct tags : public value_set_helper<tags>
 
     tags &operator=(tags &&)= default;
 
-public:
-    const std::list<tag> &get_tag_list() const
-    {
-        return tag_list;
-    }
-
-    void set_tag_list(std::list<tag> &&tag_list)
-    {
-        tags::tag_list = std::move(tag_list);
-        mask |= TAG;
-    }
-
     USING_VALUE_METHOD(0);
 
-private:
     std::list<tag> tag_list;
-
-    int32_t mask = 0;
 };
+
+const element_identify *get_tags_identifies();
+
+constexpr uint32_t tags_identifies_size = 1;
 
 
 #undef USING_VALUE_METHOD
