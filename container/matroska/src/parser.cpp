@@ -33,7 +33,7 @@ static void read_value_to_element(T &result, const element_identify &identify, e
     typedef uint64_t T::* UnsignedMemPtr;
     typedef int64_t T::* SignedMemPtr;
     typedef double T::* FloatMemPtr;
-    typedef std::string T::* StringMemPtr;
+    typedef utf8_string T::* StringMemPtr;
     typedef binary T::* BinaryMemPtr;
 
     switch (identify.type) {

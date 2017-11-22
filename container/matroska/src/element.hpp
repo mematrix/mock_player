@@ -19,7 +19,15 @@ namespace player {
 namespace container {
 namespace matroska {
 
+// todo: use position & length pair to point a binary data, instead of reading data to memory.
 using binary = std::vector<uint8_t>;
+using utf8_string = std::string;    // include ascii string.
+using uint64_list = std::vector<uint64_t>
+
+template<typename T>
+using multiple_master = std::list<T>;
+template<typename T>
+using optional_master = std::unique_ptr<T>;
 
 template<typename T>
 struct value_set_helper
@@ -58,7 +66,11 @@ enum class element_type
     FLOAT,
     STRING,
     BINARY,
-    GENERIC_TYPE
+    // GENERIC_TYPE,
+    INTEGER_LIST,
+    MASTER,
+    MULTIPLE_MASTER,
+    OPTIONAL_MASTER
 };
 
 class undefined_class_suffix;
@@ -128,7 +140,7 @@ struct ebml_header : public value_set_helper<ebml_header>
     uint64_t read_version = 1;
     uint64_t max_id_length = 4;
     uint64_t max_size_length = 8;
-    std::string doc_type;
+    utf8_string doc_type;
     uint64_t doc_type_version = 1;
     uint64_t doc_type_read_version = 1;
 };
@@ -178,7 +190,7 @@ struct meta_seek_head : public value_set_helper<meta_seek_head>
 
     USING_VALUE_METHOD(0);
 
-    std::list<meta_seek> seeks;
+    multiple_master<meta_seek> seeks;
 };
 
 const element_identify *get_meta_seek_head_identifies();
@@ -202,7 +214,7 @@ struct segment_chapter_translate : public value_set_helper<segment_chapter_trans
 
     USING_VALUE_METHOD(0);
 
-    std::vector<uint64_t> edition_uids;
+    uint64_list edition_uids;
     uint64_t codec = 0;
     binary id;
 };
@@ -241,21 +253,21 @@ struct segment_info : public value_set_helper<segment_info>
     USING_VALUE_METHOD(TIMECODE_SCALE);
 
     binary uid;
-    std::string filename;
+    utf8_string filename;
     binary prev_uid;
-    std::string prev_filename;
+    utf8_string prev_filename;
     binary next_uid;
-    std::string next_filename;
+    utf8_string next_filename;
 
-    std::list<binary> families;
-    std::list<segment_chapter_translate> chapter_translates;
+    multiple_master<binary> families;
+    multiple_master<segment_chapter_translate> chapter_translates;
 
     uint64_t timecode_scale = 1000000;
     double duration = 0.0;
     int64_t date_utc = 0;
-    std::string title;
-    std::string muxing_app;
-    std::string writing_app;
+    utf8_string title;
+    utf8_string muxing_app;
+    utf8_string writing_app;
 };
 
 const element_identify *get_segment_info_identifies();
@@ -278,7 +290,7 @@ struct cluster_silent_tracks : public value_set_helper<cluster_silent_tracks>
 
     USING_VALUE_METHOD(0);
 
-    std::vector<uint64_t> numbers;
+    uint64_list numbers;
 };
 
 const element_identify *get_cluster_silent_tracks_identifies();
@@ -328,7 +340,7 @@ struct cluster_block_additions : public value_set_helper<cluster_block_additions
 
     USING_VALUE_METHOD(0);
 
-    std::list<cluster_block_more> block_more;
+    multiple_master<cluster_block_more> block_more;
 };
 
 const element_identify *get_cluster_block_additions_identifies();
@@ -372,7 +384,7 @@ struct cluster_slices : public value_set_helper<cluster_slices>
 
     USING_VALUE_METHOD(0);
 
-    std::list<cluster_time_slice> time_slices;
+    multiple_master<cluster_time_slice> time_slices;
 };
 
 const element_identify *get_cluster_slices_identifies();
@@ -441,8 +453,8 @@ struct cluster : public value_set_helper<cluster>
     cluster_silent_tracks silent_tracks;
     uint64_t position = 0;
     uint64_t prev_size = 0;
-    std::list<binary> simple_blocks;
-    std::list<cluster_block> block_group;
+    multiple_master<binary> simple_blocks;
+    multiple_master<cluster_block> block_group;
 };
 
 const element_identify *get_cluster_identifies();
@@ -467,7 +479,7 @@ struct track_translate : public value_set_helper<track_translate>
 
     USING_VALUE_METHOD(0);
 
-    std::vector<uint64_t> edition_uids;
+    uint64_list edition_uids;
     uint64_t codec = 0;
     binary track_id;
 };
@@ -555,7 +567,7 @@ struct track_video_color : public value_set_helper<track_video_color>
     uint64_t primaries = 2;
     uint64_t max_cll = 0;
     uint64_t max_fall = 0;
-    std::unique_ptr<track_video_color_metadata> mastering_metadata;
+    optional_master<track_video_color_metadata> mastering_metadata;
 };
 
 const element_identify *get_track_video_color_identifies();
@@ -608,7 +620,7 @@ struct track_video : public value_set_helper<track_video>
     uint64_t display_unit = 0;
     uint64_t aspect_ratio_type = 0;
     binary color_space;
-    std::unique_ptr<track_video_color> color;
+    optional_master<track_video_color> color;
 };
 
 const element_identify *get_track_video_identifies();
@@ -677,7 +689,7 @@ struct track_operation_combine_planes : public value_set_helper<track_operation_
 
     USING_VALUE_METHOD(0);
 
-    std::vector<track_operation_plane> track_planes;
+    multiple_master<track_operation_plane> track_planes;
 };
 
 const element_identify *get_track_operation_combine_planes_identifies();
@@ -700,7 +712,7 @@ struct track_operation_join_blocks : public value_set_helper<track_operation_joi
 
     USING_VALUE_METHOD(0);
 
-    std::vector<uint64_t> uids;
+    uint64_list uids;
 };
 
 const element_identify *get_track_operation_join_blocks_identifies();
@@ -813,8 +825,8 @@ struct track_content_encoding : public value_set_helper<track_content_encoding>
     uint64_t order = 0;
     uint64_t scope = 1;
     uint64_t type = 0;
-    std::unique_ptr<track_content_compression> compression;
-    std::unique_ptr<track_content_encryption> encryption;
+    optional_master<track_content_compression> compression;
+    optional_master<track_content_encryption> encryption;
 };
 
 const element_identify *get_track_content_encoding_identifies();
@@ -837,7 +849,7 @@ struct track_content_encodings : public value_set_helper<track_content_encodings
 
     USING_VALUE_METHOD(0);
 
-    std::list<track_content_encoding> content_encodings;
+    multiple_master<track_content_encoding> content_encodings;
 };
 
 const element_identify *get_track_content_encodings_identifies();
@@ -898,21 +910,21 @@ struct track_entry : public value_set_helper<track_entry>
     uint64_t default_duration = 0;
     uint64_t default_decoded_field_duration = 0;
     uint64_t max_block_addition_id = 0;
-    std::string name;
-    std::string language;
-    std::string codec_id;
+    utf8_string name;
+    utf8_string language;
+    utf8_string codec_id;
     binary codec_private;
-    std::string codec_name;
+    utf8_string codec_name;
     uint64_t attachment_link = 0;
     uint64_t codec_decode_all = 1;
-    std::vector<uint64_t> overlays;
+    uint64_list overlays;
     uint64_t codec_delay = 0;
     uint64_t seek_pre_roll = 0;
-    std::list<track_translate> translate;
-    std::unique_ptr<track_video> video;
-    std::unique_ptr<track_audio> audio;
-    std::unique_ptr<track_operation> operation;
-    std::unique_ptr<track_content_encodings> content_encodings;
+    multiple_master<track_translate> translate;
+    optional_master<track_video> video;
+    optional_master<track_audio> audio;
+    optional_master<track_operation> operation;
+    optional_master<track_content_encodings> content_encodings;
 };
 
 const element_identify *get_track_entry_identifies();
@@ -935,7 +947,7 @@ struct track : public value_set_helper<track>
 
     USING_VALUE_METHOD(0);
 
-    std::list<track_entry> entries;
+    multiple_master<track_entry> entries;
 };
 
 const element_identify *get_track_identifies();
@@ -989,7 +1001,7 @@ struct cue_track_position : public value_set_helper<cue_track_position>
     uint64_t duration = 0;
     uint64_t block_number = 1;
     uint64_t codec_state = 0;
-    std::list<cue_track_reference> references;
+    multiple_master<cue_track_reference> references;
 };
 
 const element_identify *get_cue_track_position_identifies();
@@ -1014,7 +1026,7 @@ struct cue_point : public value_set_helper<cue_point>
     USING_VALUE_METHOD(0);
 
     uint64_t time = 0;
-    std::list<cue_track_position> track_positions;
+    multiple_master<cue_track_position> track_positions;
 };
 
 const element_identify *get_cue_point_identifies();
@@ -1037,7 +1049,7 @@ struct cue : public value_set_helper<cue>
 
     USING_VALUE_METHOD(0);
 
-    std::list<cue_point> cue_points;
+    multiple_master<cue_point> cue_points;
 };
 
 const element_identify *get_cue_identifies();
@@ -1064,9 +1076,9 @@ struct attached_file : public value_set_helper<attached_file>
 
     USING_VALUE_METHOD(0);
 
-    std::string description;
-    std::string name;
-    std::string mine_type;
+    utf8_string description;
+    utf8_string name;
+    utf8_string mine_type;
     binary data;
     uint64_t uid = 0;
 };
@@ -1091,7 +1103,7 @@ struct attachment : public value_set_helper<attachment>
 
     USING_VALUE_METHOD(0);
 
-    std::list<attached_file> attached_files;
+    multiple_master<attached_file> attached_files;
 };
 
 const element_identify *get_attachment_identifies();
@@ -1114,7 +1126,7 @@ struct chapter_track : public value_set_helper<chapter_track>
 
     USING_VALUE_METHOD(0);
 
-    std::vector<uint64_t> track_numbers;
+    uint64_list track_numbers;
 };
 
 const element_identify *get_chapter_track_identifies();
@@ -1139,9 +1151,9 @@ struct chapter_display : public value_set_helper<chapter_display>
 
     USING_VALUE_METHOD(0);
 
-    std::string string;
-    std::list<std::string> languages;
-    std::list<std::string> countries;
+    utf8_string string;
+    multiple_master<utf8_string> languages;
+    multiple_master<utf8_string> countries;
 };
 
 const element_identify *get_chapter_display_identifies();
@@ -1193,7 +1205,7 @@ struct chapter_process : public value_set_helper<chapter_process>
 
     uint64_t codec_id = 0;
     binary process_private;
-    std::list<chapter_process_command> commands;
+    multiple_master<chapter_process_command> commands;
 };
 
 const element_identify *get_chapter_process_identifies();
@@ -1228,9 +1240,9 @@ struct chapter_atom : public value_set_helper<chapter_atom>
 
     USING_VALUE_METHOD(FLAG_HIDDEN | FLAG_ENABLED);
 
-    std::list<chapter_atom> atoms;
+    multiple_master<chapter_atom> atoms;
     uint64_t uid = 0;
-    std::string string_uid;
+    utf8_string string_uid;
     uint64_t time_start = 0;
     uint64_t time_end = 0;
     uint64_t flag_hidden = 0;
@@ -1239,8 +1251,8 @@ struct chapter_atom : public value_set_helper<chapter_atom>
     uint64_t segment_edition_uid = 0;
     uint64_t physical_equiv = 0;
     chapter_track track;
-    std::list<chapter_display> displays;
-    std::list<chapter_process> processes;
+    multiple_master<chapter_display> displays;
+    multiple_master<chapter_process> processes;
 };
 
 const element_identify *get_chapter_atom_identifies();
@@ -1271,7 +1283,7 @@ struct chapter_edition_entry : public value_set_helper<chapter_edition_entry>
     uint64_t flag_hidden = 0;
     uint64_t flag_default = 0;
     uint64_t flag_ordered = 0;
-    std::list<chapter_atom> chapter_atoms;
+    multiple_master<chapter_atom> chapter_atoms;
 };
 
 const element_identify *get_chapter_edition_entry_identifies();
@@ -1294,7 +1306,7 @@ struct chapter : public value_set_helper<chapter>
 
     USING_VALUE_METHOD(0);
 
-    std::list<chapter_edition_entry> edition_entries;
+    multiple_master<chapter_edition_entry> edition_entries;
 };
 
 const element_identify *get_chapter_identifies();
@@ -1320,8 +1332,8 @@ struct tag_target : public value_set_helper<tag_target>
     USING_VALUE_METHOD(TYPE_VALUE);
 
     uint64_t type_value = 50;
-    std::string type;
-    std::vector<uint64_t> uids;
+    utf8_string type;
+    uint64_list uids;
 };
 
 const element_identify *get_tag_target_identifies();
@@ -1349,11 +1361,11 @@ struct simple_tag : public value_set_helper<simple_tag>
 
     USING_VALUE_METHOD(LANGUAGE | DEFAULT);
 
-    std::list<simple_tag> tags;
-    std::string name;
-    std::string language;
+    multiple_master<simple_tag> tags;
+    utf8_string name;
+    utf8_string language;
     uint64_t tag_default = 1;
-    std::string string;
+    utf8_string string;
     binary bin;
 };
 
@@ -1379,7 +1391,7 @@ struct tag : public value_set_helper<tag>
     USING_VALUE_METHOD(0);
 
     tag_target target;
-    std::list<simple_tag> simple_tags;
+    multiple_master<simple_tag> simple_tags;
 };
 
 const element_identify *get_tag_identifies();
@@ -1402,7 +1414,7 @@ struct tags : public value_set_helper<tags>
 
     USING_VALUE_METHOD(0);
 
-    std::list<tag> tag_list;
+    multiple_master<tag> tag_list;
 };
 
 const element_identify *get_tags_identifies();
