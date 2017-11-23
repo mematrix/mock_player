@@ -28,13 +28,17 @@ private:
 
 
 template<typename T>
-static void read_value_to_element(T &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node)
+using master_handler = void (*)(T &, const element_identify &, ebml_parser &, const ebml_node &);
+
+template<typename T>
+static void read_value_to_element(T &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node, master_handler<T> handler = nullptr)
 {
     typedef uint64_t T::* UnsignedMemPtr;
     typedef int64_t T::* SignedMemPtr;
     typedef double T::* FloatMemPtr;
     typedef utf8_string T::* StringMemPtr;
     typedef binary T::* BinaryMemPtr;
+    typedef uint64_list T::* UIntListMemPtr;
 
     switch (identify.type) {
         case element_type::UNSIGNED_INTEGER: {
@@ -70,10 +74,25 @@ static void read_value_to_element(T &result, const element_identify &identify, e
             break;
         }
         case element_type::BINARY: {
-            binary bin_value;
-            if (parser.read_binary(node, bin_value) == 0) {
-                result.*(identify.class_member_ptr.access<BinaryMemPtr>()) = std::move(bin_value);
+            binary bin_value(node.position, node.size);
+            result.*(identify.class_member_ptr.access<BinaryMemPtr>()) = bin_value;
+            result.mask |= identify.name_mask;
+            break;
+        }
+        case element_type::INTEGER_LIST: {
+            uint64_t unsigned_value;
+            if (parser.read_unsigned_integer(node, unsigned_value) == 0) {
+                auto &list_value = result.*(identify.class_member_ptr.access<UIntListMemPtr>());
+                list_value.push_back(unsigned_value);
                 result.mask |= identify.name_mask;
+            }
+            break;
+        }
+        case element_type::MASTER:
+        case element_type::MULTIPLE_MASTER:
+        case element_type::OPTIONAL_MASTER: {
+            if (handler) {
+                handler(result, identify, parser, node);
             }
             break;
         }
@@ -87,91 +106,38 @@ parser::parser(std::unique_ptr<std::istream> &&stream, parser_callback &cb) : in
 
 int32_t parser::parse_ebml_header(ebml_header &result)
 {
-    ebml_node node;
-    if (ep.parse_next(node) != 0) {
+    ebml_node root_node;
+    if (ep.parse_next(root_node) != 0) {
         return -1;
     }
 
-    unsigned char *id = 0;//node.id;
-    if (id[0] != 0x1A || id[1] != 0x45 || id[2] != 0xDF || id[3] != 0xA3) {
+    if (root_node.id != 0x1A45DFA3) {
         return -1;
     }
 
-    ebml_parser_walker walker(ep, node.position);
-    auto size = node.size;
+    ebml_parser_walker walker(ep, root_node.position);
+    auto size = root_node.size;
+    auto &id_map = get_ebml_header_identifies();
+
     while (size > 0) {
-        ebml_node n;
-        if (ep.parse_next(n) != 0) {
+        ebml_node node;
+        if (ep.parse_next(node) != 0) {
             return -1;
         }
 
-        size -= n.size;
-
-        if (n.id != 0x42) {
-            continue;   // ebml header sub element'id all starts with 0x42
+        size -= node.size;
+        auto identify = id_map.get(node.id);
+        if (nullptr == identify) {
+            continue;
         }
 
-        uint64_t value;
-        switch (n.id) {
-            case 0x86: // EBMLVersion
-            {
-                if (ep.read_unsigned_integer(n, value) == 0) {
-                    result.set_version(value);
-                }
-                break;
-            }
-            case 0xF7: // EBMLReadVersion
-            {
-                if (ep.read_unsigned_integer(n, value) == 0) {
-                    result.set_read_version(value);
-                }
-                break;
-            }
-            case 0xF2: // EBMLMaxIDLength
-            {
-                if (ep.read_unsigned_integer(n, value) == 0) {
-                    result.set_max_id_length(value);
-                }
-                break;
-            }
-            case 0xF3: // EBMLMaxSizeLength
-            {
-                if (ep.read_unsigned_integer(n, value) == 0) {
-                    result.set_max_size_length(value);
-                }
-                break;
-            }
-            case 0x82: // DocType
-            {
-                std::string str;
-                if (ep.read_string(n, str) == 0) {
-                    result.set_doc_type(std::move(str));
-                }
-                break;
-            }
-            case 0x87: // DocTypeVersion
-            {
-                if (ep.read_unsigned_integer(n, value) == 0) {
-                    result.set_doc_type_version(value);
-                }
-                break;
-            }
-            case 0x85: // DocTypeReadVersion
-            {
-                if (ep.read_unsigned_integer(n, value) == 0) {
-                    result.set_doc_type_read_version(value);
-                }
-                break;
-            }
-            default:
-                break;
-        }
+        read_value_to_element(result, *identify, ep, node);
     }
 
     return 0;
 }
 
-int32_t parser::parse_segment()
+int32_t parser::parse_segment(ebml_node &result)
 {
     ebml_node segment_node;
     if (ep.parse_next(segment_node) != 0) {
@@ -224,6 +190,16 @@ int32_t parser::parse_segment()
         }*/
     }
 
+    return 0;
+}
+
+int32_t parser::parse_next_element()
+{
+    return 0;
+}
+
+int32_t parser::seek(int64_t position)
+{
     return 0;
 }
 

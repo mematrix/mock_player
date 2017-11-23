@@ -36,9 +36,41 @@ public:
 
     parser &operator=(const parser &) = delete;
 
+    /**
+     * parse matroska file header element. this method should be called firstly
+     *
+     * @param result if success, contains the ebml_header data
+     * @return zero if success, otherwise non-zero
+     */
     int32_t parse_ebml_header(ebml_header &result);
 
-    int32_t parse_segment();
+    /**
+     * parse matroska segment element. this method should be called after (@see parse_ebml_header),
+     * but before (@see parse_next_element).
+     *
+     * @param result if success, contains the segment element ebml-structure data
+     * @return zero if success, otherwise non-zero
+     */
+    int32_t parse_segment(ebml_node &result);
+
+    /**
+     * parse next one element from current position. before call it, the stream position must align
+     * with an ebml-element
+     *
+     * @return zero if success, otherwise non-zero
+     */
+    int32_t parse_next_element();
+
+    /**
+     * seek stream position
+     *
+     * @param position stream read position
+     * @return zero if success, otherwise non-zero
+     */
+    int32_t seek(int64_t position);
+
+    template<typename T>
+    int32_t read_element(T &result, uint32_t id/* master func*/);
 
 private:
     void do_meta_seek_info_parse();

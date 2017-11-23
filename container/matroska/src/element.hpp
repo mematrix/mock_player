@@ -11,6 +11,7 @@
 #include <vector>
 #include <list>
 #include <memory>
+#include <utility>
 
 #define ELEMENT_PROPERTY(ma, mu, def, type, ver)
 
@@ -20,9 +21,9 @@ namespace container {
 namespace matroska {
 
 // todo: use position & length pair to point a binary data, instead of reading data to memory.
-using binary = std::vector<uint8_t>;
+using binary = std::pair<int64_t, uint64_t>;
 using utf8_string = std::string;    // include ascii string.
-using uint64_list = std::vector<uint64_t>
+using uint64_list = std::vector<uint64_t>;
 
 template<typename T>
 using multiple_master = std::list<T>;
@@ -67,7 +68,7 @@ enum class element_type
     STRING,
     BINARY,
     // GENERIC_TYPE,
-    INTEGER_LIST,
+            INTEGER_LIST,
     MASTER,
     MULTIPLE_MASTER,
     OPTIONAL_MASTER
@@ -115,6 +116,20 @@ struct element_identify
 };
 
 
+class ebml_id_identify_map
+{
+    using entry = std::pair<uint32_t, const element_identify *>;
+    std::vector<std::pair<uint32_t, const element_identify *>> ebml_map;
+
+public:
+    ebml_id_identify_map(const element_identify *, uint32_t);
+
+    const element_identify *get(uint32_t) const;
+
+    uint32_t size() const { return static_cast<uint32_t>(ebml_map.size()); }
+};
+
+
 struct ebml_header : public value_set_helper<ebml_header>
 {
     enum
@@ -145,9 +160,7 @@ struct ebml_header : public value_set_helper<ebml_header>
     uint64_t doc_type_read_version = 1;
 };
 
-const element_identify *get_ebml_header_identifies();
-
-constexpr uint32_t ebml_header_identifies_size = 7;
+const ebml_id_identify_map &get_ebml_header_identifies();
 
 
 struct meta_seek : public value_set_helper<meta_seek>
@@ -170,9 +183,7 @@ struct meta_seek : public value_set_helper<meta_seek>
     uint64_t position = 0;
 };
 
-const element_identify *get_meta_seek_identifies();
-
-constexpr uint32_t meta_seek_identifies_size = 2;
+const ebml_id_identify_map &get_meta_seek_identifies();
 
 
 struct meta_seek_head : public value_set_helper<meta_seek_head>
@@ -193,9 +204,8 @@ struct meta_seek_head : public value_set_helper<meta_seek_head>
     multiple_master<meta_seek> seeks;
 };
 
-const element_identify *get_meta_seek_head_identifies();
+const ebml_id_identify_map &get_meta_seek_head_identifies();
 
-constexpr uint32_t meta_seek_head_identifies_size = 1;
 
 struct segment_chapter_translate : public value_set_helper<segment_chapter_translate>
 {
@@ -219,9 +229,7 @@ struct segment_chapter_translate : public value_set_helper<segment_chapter_trans
     binary id;
 };
 
-const element_identify *get_segment_chapter_translate_identifies();
-
-constexpr uint32_t segment_chapter_translate_identifies_size = 3;
+const ebml_id_identify_map &get_segment_chapter_translate_identifies();
 
 
 struct segment_info : public value_set_helper<segment_info>
@@ -270,9 +278,7 @@ struct segment_info : public value_set_helper<segment_info>
     utf8_string writing_app;
 };
 
-const element_identify *get_segment_info_identifies();
-
-constexpr uint32_t segment_info_identifies_size = 14;
+const ebml_id_identify_map &get_segment_info_identifies();
 
 
 struct cluster_silent_tracks : public value_set_helper<cluster_silent_tracks>
@@ -293,9 +299,7 @@ struct cluster_silent_tracks : public value_set_helper<cluster_silent_tracks>
     uint64_list numbers;
 };
 
-const element_identify *get_cluster_silent_tracks_identifies();
-
-constexpr uint32_t cluster_silent_tracks_identifies_size = 1;
+const ebml_id_identify_map &get_cluster_silent_tracks_identifies();
 
 
 struct cluster_block_more : public value_set_helper<cluster_block_more>
@@ -318,9 +322,7 @@ struct cluster_block_more : public value_set_helper<cluster_block_more>
     binary additional;
 };
 
-const element_identify *get_cluster_block_more_identifies();
-
-constexpr uint32_t cluster_block_more_identifies_size = 2;
+const ebml_id_identify_map &get_cluster_block_more_identifies();
 
 
 struct cluster_block_additions : public value_set_helper<cluster_block_additions>
@@ -343,9 +345,7 @@ struct cluster_block_additions : public value_set_helper<cluster_block_additions
     multiple_master<cluster_block_more> block_more;
 };
 
-const element_identify *get_cluster_block_additions_identifies();
-
-constexpr uint32_t cluster_block_additions_identifies_size = 1;
+const ebml_id_identify_map &get_cluster_block_additions_identifies();
 
 
 struct cluster_time_slice : public value_set_helper<cluster_time_slice>
@@ -362,9 +362,7 @@ struct cluster_time_slice : public value_set_helper<cluster_time_slice>
     uint64_t lace_number = 0;
 };
 
-const element_identify *get_cluster_time_slice_identifies();
-
-constexpr uint32_t cluster_time_slice_identifies_size = 1;
+const ebml_id_identify_map &get_cluster_time_slice_identifies();
 
 
 struct cluster_slices : public value_set_helper<cluster_slices>
@@ -387,9 +385,7 @@ struct cluster_slices : public value_set_helper<cluster_slices>
     multiple_master<cluster_time_slice> time_slices;
 };
 
-const element_identify *get_cluster_slices_identifies();
-
-constexpr uint32_t cluster_slices_identifies_size = 1;
+const ebml_id_identify_map &get_cluster_slices_identifies();
 
 
 struct cluster_block : public value_set_helper<cluster_block>
@@ -424,9 +420,7 @@ struct cluster_block : public value_set_helper<cluster_block>
     cluster_slices slices;
 };
 
-const element_identify *get_cluster_block_identifies();
-
-constexpr uint32_t cluster_block_identifies_size = 8;
+const ebml_id_identify_map &get_cluster_block_identifies();
 
 
 struct cluster : public value_set_helper<cluster>
@@ -457,9 +451,7 @@ struct cluster : public value_set_helper<cluster>
     multiple_master<cluster_block> block_group;
 };
 
-const element_identify *get_cluster_identifies();
-
-constexpr uint32_t cluster_identifies_size = 6;
+const ebml_id_identify_map &get_cluster_identifies();
 
 
 struct track_translate : public value_set_helper<track_translate>
@@ -484,9 +476,7 @@ struct track_translate : public value_set_helper<track_translate>
     binary track_id;
 };
 
-const element_identify *get_track_translate_identifies();
-
-constexpr uint32_t track_translate_identifies_size = 3;
+const ebml_id_identify_map &get_track_translate_identifies();
 
 
 struct track_video_color_metadata : public value_set_helper<track_video_color_metadata>
@@ -521,9 +511,7 @@ struct track_video_color_metadata : public value_set_helper<track_video_color_me
     double luminance_min = 0.0;
 };
 
-const element_identify *get_track_video_color_metadata_identifies();
-
-constexpr uint32_t track_video_color_metadata_identifies_size = 10;
+const ebml_id_identify_map &get_track_video_color_metadata_identifies();
 
 
 struct track_video_color : public value_set_helper<track_video_color>
@@ -570,9 +558,7 @@ struct track_video_color : public value_set_helper<track_video_color>
     optional_master<track_video_color_metadata> mastering_metadata;
 };
 
-const element_identify *get_track_video_color_identifies();
-
-constexpr uint32_t track_video_color_identifies_size = 14;
+const ebml_id_identify_map &get_track_video_color_identifies();
 
 
 struct track_video : public value_set_helper<track_video>
@@ -623,9 +609,7 @@ struct track_video : public value_set_helper<track_video>
     optional_master<track_video_color> color;
 };
 
-const element_identify *get_track_video_identifies();
-
-constexpr uint32_t track_video_identifies_size = 16;
+const ebml_id_identify_map &get_track_video_identifies();
 
 
 struct track_audio : public value_set_helper<track_audio>
@@ -648,9 +632,7 @@ struct track_audio : public value_set_helper<track_audio>
     uint64_t bit_depth = 0;
 };
 
-const element_identify *get_track_audio_identifies();
-
-constexpr uint32_t track_audio_identifies_size = 4;
+const ebml_id_identify_map &get_track_audio_identifies();
 
 
 struct track_operation_plane : public value_set_helper<track_operation_plane>
@@ -669,9 +651,7 @@ struct track_operation_plane : public value_set_helper<track_operation_plane>
     uint64_t type = 0;
 };
 
-const element_identify *get_track_operation_plane_identifies();
-
-constexpr uint32_t track_operation_plane_identifies_size = 2;
+const ebml_id_identify_map &get_track_operation_plane_identifies();
 
 
 struct track_operation_combine_planes : public value_set_helper<track_operation_combine_planes>
@@ -692,9 +672,7 @@ struct track_operation_combine_planes : public value_set_helper<track_operation_
     multiple_master<track_operation_plane> track_planes;
 };
 
-const element_identify *get_track_operation_combine_planes_identifies();
-
-constexpr uint32_t track_operation_combine_planes_identifies_size = 1;
+const ebml_id_identify_map &get_track_operation_combine_planes_identifies();
 
 
 struct track_operation_join_blocks : public value_set_helper<track_operation_join_blocks>
@@ -715,9 +693,7 @@ struct track_operation_join_blocks : public value_set_helper<track_operation_joi
     uint64_list uids;
 };
 
-const element_identify *get_track_operation_join_blocks_identifies();
-
-constexpr uint32_t track_operation_join_blocks_identifies_size = 1;
+const ebml_id_identify_map &get_track_operation_join_blocks_identifies();
 
 
 struct track_operation : public value_set_helper<track_operation>
@@ -740,9 +716,7 @@ struct track_operation : public value_set_helper<track_operation>
     track_operation_join_blocks join_blocks;
 };
 
-const element_identify *get_track_operation_identifies();
-
-constexpr uint32_t track_operation_identifies_size = 2;
+const ebml_id_identify_map &get_track_operation_identifies();
 
 
 struct track_content_compression : public value_set_helper<track_content_compression>
@@ -765,9 +739,7 @@ struct track_content_compression : public value_set_helper<track_content_compres
     binary settings;
 };
 
-const element_identify *get_track_content_compression_identifies();
-
-constexpr uint32_t track_content_compression_identifies_size = 2;
+const ebml_id_identify_map &get_track_content_compression_identifies();
 
 
 struct track_content_encryption : public value_set_helper<track_content_encryption>
@@ -798,9 +770,7 @@ struct track_content_encryption : public value_set_helper<track_content_encrypti
     uint64_t sig_hash_algorithm = 0;
 };
 
-const element_identify *get_track_content_encryption_identifies();
-
-constexpr uint32_t track_content_encryption_identifies_size = 6;
+const ebml_id_identify_map &get_track_content_encryption_identifies();
 
 
 struct track_content_encoding : public value_set_helper<track_content_encoding>
@@ -829,9 +799,7 @@ struct track_content_encoding : public value_set_helper<track_content_encoding>
     optional_master<track_content_encryption> encryption;
 };
 
-const element_identify *get_track_content_encoding_identifies();
-
-constexpr uint32_t track_content_encoding_identifies_size = 5;
+const ebml_id_identify_map &get_track_content_encoding_identifies();
 
 
 struct track_content_encodings : public value_set_helper<track_content_encodings>
@@ -852,9 +820,7 @@ struct track_content_encodings : public value_set_helper<track_content_encodings
     multiple_master<track_content_encoding> content_encodings;
 };
 
-const element_identify *get_track_content_encodings_identifies();
-
-constexpr uint32_t track_content_encodings_identifies_size = 1;
+const ebml_id_identify_map &get_track_content_encodings_identifies();
 
 
 struct track_entry : public value_set_helper<track_entry>
@@ -927,9 +893,7 @@ struct track_entry : public value_set_helper<track_entry>
     optional_master<track_content_encodings> content_encodings;
 };
 
-const element_identify *get_track_entry_identifies();
-
-constexpr uint32_t track_entry_identifies_size = 27;
+const ebml_id_identify_map &get_track_entry_identifies();
 
 
 struct track : public value_set_helper<track>
@@ -950,9 +914,7 @@ struct track : public value_set_helper<track>
     multiple_master<track_entry> entries;
 };
 
-const element_identify *get_track_identifies();
-
-constexpr uint32_t track_identifies_size = 1;
+const ebml_id_identify_map &get_track_identifies();
 
 
 struct cue_track_reference : public value_set_helper<cue_track_reference>
@@ -969,9 +931,7 @@ struct cue_track_reference : public value_set_helper<cue_track_reference>
     uint64_t ref_time = 0;
 };
 
-const element_identify *get_cue_track_reference_identifies();
-
-constexpr uint32_t cue_track_reference_identifies_size = 1;
+const ebml_id_identify_map &get_cue_track_reference_identifies();
 
 
 struct cue_track_position : public value_set_helper<cue_track_position>
@@ -1004,9 +964,7 @@ struct cue_track_position : public value_set_helper<cue_track_position>
     multiple_master<cue_track_reference> references;
 };
 
-const element_identify *get_cue_track_position_identifies();
-
-constexpr uint32_t cue_track_position_identifies_size = 7;
+const ebml_id_identify_map &get_cue_track_position_identifies();
 
 
 struct cue_point : public value_set_helper<cue_point>
@@ -1029,9 +987,7 @@ struct cue_point : public value_set_helper<cue_point>
     multiple_master<cue_track_position> track_positions;
 };
 
-const element_identify *get_cue_point_identifies();
-
-constexpr uint32_t cue_point_identifies_size = 2;
+const ebml_id_identify_map &get_cue_point_identifies();
 
 
 struct cue : public value_set_helper<cue>
@@ -1052,9 +1008,7 @@ struct cue : public value_set_helper<cue>
     multiple_master<cue_point> cue_points;
 };
 
-const element_identify *get_cue_identifies();
-
-constexpr uint32_t cue_identifies_size = 1;
+const ebml_id_identify_map &get_cue_identifies();
 
 
 struct attached_file : public value_set_helper<attached_file>
@@ -1083,9 +1037,7 @@ struct attached_file : public value_set_helper<attached_file>
     uint64_t uid = 0;
 };
 
-const element_identify *get_attached_file_identifies();
-
-constexpr uint32_t attached_file_identifies_size = 5;
+const ebml_id_identify_map &get_attached_file_identifies();
 
 
 struct attachment : public value_set_helper<attachment>
@@ -1106,9 +1058,7 @@ struct attachment : public value_set_helper<attachment>
     multiple_master<attached_file> attached_files;
 };
 
-const element_identify *get_attachment_identifies();
-
-constexpr uint32_t attachment_identifies_size = 1;
+const ebml_id_identify_map &get_attachment_identifies();
 
 
 struct chapter_track : public value_set_helper<chapter_track>
@@ -1129,9 +1079,7 @@ struct chapter_track : public value_set_helper<chapter_track>
     uint64_list track_numbers;
 };
 
-const element_identify *get_chapter_track_identifies();
-
-constexpr uint32_t chapter_track_identifies_size = 1;
+const ebml_id_identify_map &get_chapter_track_identifies();
 
 
 struct chapter_display : public value_set_helper<chapter_display>
@@ -1156,9 +1104,7 @@ struct chapter_display : public value_set_helper<chapter_display>
     multiple_master<utf8_string> countries;
 };
 
-const element_identify *get_chapter_display_identifies();
-
-constexpr uint32_t chapter_display_identifies_size = 3;
+const ebml_id_identify_map &get_chapter_display_identifies();
 
 
 struct chapter_process_command : public value_set_helper<chapter_process_command>
@@ -1181,9 +1127,7 @@ struct chapter_process_command : public value_set_helper<chapter_process_command
     binary data;
 };
 
-const element_identify *get_chapter_process_command_identifies();
-
-constexpr uint32_t chapter_process_command_identifies_size = 2;
+const ebml_id_identify_map &get_chapter_process_command_identifies();
 
 
 struct chapter_process : public value_set_helper<chapter_process>
@@ -1208,9 +1152,7 @@ struct chapter_process : public value_set_helper<chapter_process>
     multiple_master<chapter_process_command> commands;
 };
 
-const element_identify *get_chapter_process_identifies();
-
-constexpr uint32_t chapter_process_identifies_size = 3;
+const ebml_id_identify_map &get_chapter_process_identifies();
 
 
 struct chapter_atom : public value_set_helper<chapter_atom>
@@ -1255,9 +1197,7 @@ struct chapter_atom : public value_set_helper<chapter_atom>
     multiple_master<chapter_process> processes;
 };
 
-const element_identify *get_chapter_atom_identifies();
-
-constexpr uint32_t chapter_atom_identifies_size = 13;
+const ebml_id_identify_map &get_chapter_atom_identifies();
 
 
 struct chapter_edition_entry : public value_set_helper<chapter_edition_entry>
@@ -1286,9 +1226,7 @@ struct chapter_edition_entry : public value_set_helper<chapter_edition_entry>
     multiple_master<chapter_atom> chapter_atoms;
 };
 
-const element_identify *get_chapter_edition_entry_identifies();
-
-constexpr uint32_t chapter_edition_entry_identifies_size = 5;
+const ebml_id_identify_map &get_chapter_edition_entry_identifies();
 
 
 struct chapter : public value_set_helper<chapter>
@@ -1309,9 +1247,7 @@ struct chapter : public value_set_helper<chapter>
     multiple_master<chapter_edition_entry> edition_entries;
 };
 
-const element_identify *get_chapter_identifies();
-
-constexpr uint32_t chapter_identifies_size = 1;
+const ebml_id_identify_map &get_chapter_identifies();
 
 
 struct tag_target : public value_set_helper<tag_target>
@@ -1336,9 +1272,7 @@ struct tag_target : public value_set_helper<tag_target>
     uint64_list uids;
 };
 
-const element_identify *get_tag_target_identifies();
-
-constexpr uint32_t tag_target_identifies_size = 3;
+const ebml_id_identify_map &get_tag_target_identifies();
 
 
 struct simple_tag : public value_set_helper<simple_tag>
@@ -1369,9 +1303,7 @@ struct simple_tag : public value_set_helper<simple_tag>
     binary bin;
 };
 
-const element_identify *get_simple_tag_identifies();
-
-constexpr uint32_t simple_tag_identifies_size = 6;
+const ebml_id_identify_map &get_simple_tag_identifies();
 
 
 struct tag : public value_set_helper<tag>
@@ -1394,9 +1326,7 @@ struct tag : public value_set_helper<tag>
     multiple_master<simple_tag> simple_tags;
 };
 
-const element_identify *get_tag_identifies();
-
-constexpr uint32_t tag_identifies_size = 2;
+const ebml_id_identify_map &get_tag_identifies();
 
 
 struct tags : public value_set_helper<tags>
@@ -1417,9 +1347,7 @@ struct tags : public value_set_helper<tags>
     multiple_master<tag> tag_list;
 };
 
-const element_identify *get_tags_identifies();
-
-constexpr uint32_t tags_identifies_size = 1;
+const ebml_id_identify_map &get_tags_identifies();
 
 
 #undef USING_VALUE_METHOD
