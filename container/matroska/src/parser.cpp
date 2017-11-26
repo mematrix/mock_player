@@ -28,9 +28,6 @@ private:
 
 
 template<typename T>
-using master_handler = void (*)(T &, const element_identify &, ebml_parser &, const ebml_node &);
-
-template<typename T>
 static void read_value_to_element(T &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node, master_handler<T> handler = nullptr)
 {
     typedef uint64_t T::* UnsignedMemPtr;
@@ -39,6 +36,7 @@ static void read_value_to_element(T &result, const element_identify &identify, e
     typedef utf8_string T::* StringMemPtr;
     typedef binary T::* BinaryMemPtr;
     typedef uint64_list T::* UIntListMemPtr;
+    typedef int64_list T::* IntListMemPtr;
 
     switch (identify.type) {
         case element_type::UNSIGNED_INTEGER: {
@@ -75,11 +73,11 @@ static void read_value_to_element(T &result, const element_identify &identify, e
         }
         case element_type::BINARY: {
             binary bin_value(node.position, node.size);
-            result.*(identify.class_member_ptr.access<BinaryMemPtr>()) = bin_value;
+            //result.*(identify.class_member_ptr.access<BinaryMemPtr>()) = bin_value;
             result.mask |= identify.name_mask;
             break;
         }
-        case element_type::INTEGER_LIST: {
+        case element_type::UNSIGNED_INTEGER_LIST: {
             uint64_t unsigned_value;
             if (parser.read_unsigned_integer(node, unsigned_value) == 0) {
                 auto &list_value = result.*(identify.class_member_ptr.access<UIntListMemPtr>());
@@ -87,6 +85,14 @@ static void read_value_to_element(T &result, const element_identify &identify, e
                 result.mask |= identify.name_mask;
             }
             break;
+        }
+        case element_type::SIGNED_INTEGER_LIST: {
+            int64_t signed_value;
+            if (parser.read_integer(node, signed_value) == 0) {
+                auto &list_value = result.*(identify.class_member_ptr.access<IntListMemPtr>());
+                list_value.emplace_back(signed_value);
+                result.mask |= identify.name_mask;
+            }
         }
         case element_type::MASTER:
         case element_type::MULTIPLE_MASTER:

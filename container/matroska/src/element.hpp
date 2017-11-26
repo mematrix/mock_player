@@ -24,6 +24,7 @@ namespace matroska {
 using binary = std::pair<int64_t, uint64_t>;
 using utf8_string = std::string;    // include ascii string.
 using uint64_list = std::vector<uint64_t>;
+using int64_list = std::vector<int64_t>;
 
 template<typename T>
 using multiple_master = std::list<T>;
@@ -67,8 +68,8 @@ enum class element_type
     FLOAT,
     STRING,
     BINARY,
-    // GENERIC_TYPE,
-            INTEGER_LIST,
+    UNSIGNED_INTEGER_LIST,
+    SIGNED_INTEGER_LIST,
     MASTER,
     MULTIPLE_MASTER,
     OPTIONAL_MASTER
@@ -414,7 +415,7 @@ struct cluster_block : public value_set_helper<cluster_block>
     cluster_block_additions additions;
     uint64_t duration = 0;
     uint64_t reference_priority = 0;
-    int64_t reference_block = 0;
+    int64_list reference_block;
     binary codec_state;
     int64_t discard_padding = 0;
     cluster_slices slices;
@@ -1256,7 +1257,10 @@ struct tag_target : public value_set_helper<tag_target>
     {
         TYPE_VALUE = 1 << 0,
         TYPE = 1 << 1,
-        UID = 1 << 2
+        TRACK_UID = 1 << 2,
+        EDITION_UID=1<<3,
+        CHAPTER_UID=1<<4,
+        ATTACHMENT_UID=1<<5
     };
 
     tag_target() = default;

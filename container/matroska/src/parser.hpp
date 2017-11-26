@@ -17,6 +17,11 @@ namespace player {
 namespace container {
 namespace matroska {
 
+
+template<typename T>
+using master_handler = void (*)(T &, const element_identify &, ebml_parser &, const ebml_node &);
+
+
 class parser_callback
 {
 public:
@@ -69,8 +74,34 @@ public:
      */
     int32_t seek(int64_t position);
 
+    /**
+     * resync stream position to (probable) next cluster element start position.
+     * @warning call this method only when stream is corrupt, because this method will find the cluster
+     * id in the stream sequentially.
+     * @return zero if success, otherwise non-zero
+     */
+    int32_t resync_to_cluster();
+
+    /**
+     * skip current element until detect a cluster element. unlike @see resync_to_cluster, this
+     * method will read an ebml element and test ebml_id, and forward seek by the ebml_size.
+     *
+     * @return zero if success, otherwise non-zero
+     */
+    int32_t skip_to_cluster();
+
+    /**
+     * read special type element from current position. if id reading from stream is not equal to
+     * the param @see id, an error will return.
+     *
+     * @tparam T result type
+     * @param result element entry object
+     * @param id special ebml id
+     * @param handler if not null, handle the sub master element reading process.
+     * @return zeor if success, otherwise non-zero
+     */
     template<typename T>
-    int32_t read_element(T &result, uint32_t id/* master func*/);
+    int32_t read_element(T &result, uint32_t id, master_handler<T> handler = nullptr);
 
 private:
     void do_meta_seek_info_parse();

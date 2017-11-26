@@ -51,7 +51,7 @@ const ebml_id_identify_map &::player::container::matroska::get_meta_seek_head_id
 const ebml_id_identify_map &::player::container::matroska::get_segment_chapter_translate_identifies()
 {
     static element_identify segment_chapter_translate_identifies[] = {
-            element_identify(element_type::INTEGER_LIST, &segment_chapter_translate::edition_uids, segment_chapter_translate::EDITION_UID, 0x69FC),
+            element_identify(element_type::UNSIGNED_INTEGER_LIST, &segment_chapter_translate::edition_uids, segment_chapter_translate::EDITION_UID, 0x69FC),
             element_identify(element_type::UNSIGNED_INTEGER, &segment_chapter_translate::codec, segment_chapter_translate::CODEC, 0x69BF),
             element_identify(element_type::BINARY, &segment_chapter_translate::id, segment_chapter_translate::ID, 0x69A5)
     };
@@ -88,7 +88,7 @@ const ebml_id_identify_map &::player::container::matroska::get_segment_info_iden
 const ebml_id_identify_map &::player::container::matroska::get_cluster_silent_tracks_identifies()
 {
     static element_identify cluster_silent_tracks_identifies[] = {
-            element_identify(element_type::INTEGER_LIST, &cluster_silent_tracks::numbers, cluster_silent_tracks::NUMBER, 0x58D7)
+            element_identify(element_type::UNSIGNED_INTEGER_LIST, &cluster_silent_tracks::numbers, cluster_silent_tracks::NUMBER, 0x58D7)
     };
     static ebml_id_identify_map map(cluster_silent_tracks_identifies, ARRAY_SIZE(cluster_silent_tracks_identifies));
 
@@ -143,7 +143,7 @@ const ebml_id_identify_map &::player::container::matroska::get_cluster_block_ide
             element_identify(element_type::MASTER, &cluster_block::additions, cluster_block::ADDITIONS, 0x75A1),
             element_identify(element_type::UNSIGNED_INTEGER, &cluster_block::duration, cluster_block::DURATION, 0x9B),
             element_identify(element_type::UNSIGNED_INTEGER, &cluster_block::reference_priority, cluster_block::REFERENCE_PRIORITY, 0xFA),
-            element_identify(element_type::SIGNED_INTEGER, &cluster_block::reference_block, cluster_block::REFERENCE_BLOCK, 0xFB),
+            element_identify(element_type::SIGNED_INTEGER_LIST, &cluster_block::reference_block, cluster_block::REFERENCE_BLOCK, 0xFB),
             element_identify(element_type::BINARY, &cluster_block::codec_state, cluster_block::CODEC_STATE, 0xA4),
             element_identify(element_type::SIGNED_INTEGER, &cluster_block::discard_padding, cluster_block::DISCARD_PADDING, 0x75A2),
             element_identify(element_type::MASTER, &cluster_block::slices, cluster_block::SLICES, 0x8E)
@@ -171,7 +171,7 @@ const ebml_id_identify_map &::player::container::matroska::get_cluster_identifie
 const ebml_id_identify_map &::player::container::matroska::get_track_translate_identifies()
 {
     static element_identify track_translate_identifies[] = {
-            element_identify(element_type::INTEGER_LIST, &track_translate::edition_uids, track_translate::EDITION_UID, 0x66FC),
+            element_identify(element_type::UNSIGNED_INTEGER_LIST, &track_translate::edition_uids, track_translate::EDITION_UID, 0x66FC),
             element_identify(element_type::UNSIGNED_INTEGER, &track_translate::codec, track_translate::CODEC, 0x66BF),
             element_identify(element_type::BINARY, &track_translate::track_id, track_translate::TRACK_ID, 0x66A5)
     };
@@ -284,7 +284,7 @@ const ebml_id_identify_map &::player::container::matroska::get_track_operation_c
 const ebml_id_identify_map &::player::container::matroska::get_track_operation_join_blocks_identifies()
 {
     static element_identify track_operation_join_blocks_identifies[] = {
-            element_identify(element_type::INTEGER_LIST, &track_operation_join_blocks::uids, track_operation_join_blocks::UID, 0xED)
+            element_identify(element_type::UNSIGNED_INTEGER_LIST, &track_operation_join_blocks::uids, track_operation_join_blocks::UID, 0xED)
     };
     static ebml_id_identify_map map(track_operation_join_blocks_identifies, ARRAY_SIZE(track_operation_join_blocks_identifies));
 
@@ -374,7 +374,7 @@ const ebml_id_identify_map &::player::container::matroska::get_track_entry_ident
             element_identify(element_type::STRING, &track_entry::codec_name, track_entry::CODEC_NAME, 0x258688),
             element_identify(element_type::UNSIGNED_INTEGER, &track_entry::attachment_link, track_entry::ATTACHMENT_LINK, 0x7446),
             element_identify(element_type::UNSIGNED_INTEGER, &track_entry::codec_decode_all, track_entry::CODEC_DECODE_ALL, 0xAA),
-            element_identify(element_type::INTEGER_LIST, &track_entry::overlays, track_entry::OVERLAY, 0x6FAB),
+            element_identify(element_type::UNSIGNED_INTEGER_LIST, &track_entry::overlays, track_entry::OVERLAY, 0x6FAB),
             element_identify(element_type::UNSIGNED_INTEGER, &track_entry::codec_delay, track_entry::CODEC_DELAY, 0x56AA),
             element_identify(element_type::UNSIGNED_INTEGER, &track_entry::seek_pre_roll, track_entry::SEEK_PRE_ROLL, 0x56BB),
             element_identify(element_type::MULTIPLE_MASTER, &track_entry::translate, track_entry::TRANSLATE, 0x6624),
@@ -472,7 +472,7 @@ const ebml_id_identify_map &::player::container::matroska::get_attachment_identi
 const ebml_id_identify_map &::player::container::matroska::get_chapter_track_identifies()
 {
     static element_identify chapter_track_identifies[] = {
-            element_identify(element_type::INTEGER_LIST, &chapter_track::track_numbers, chapter_track::TRACK_NUMBER, 0x89)
+            element_identify(element_type::UNSIGNED_INTEGER_LIST, &chapter_track::track_numbers, chapter_track::TRACK_NUMBER, 0x89)
     };
     static ebml_id_identify_map map(chapter_track_identifies, ARRAY_SIZE(chapter_track_identifies));
 
@@ -565,7 +565,10 @@ const ebml_id_identify_map &::player::container::matroska::get_tag_target_identi
     static element_identify tag_target_identifies[] = {
             element_identify(element_type::UNSIGNED_INTEGER, &tag_target::type_value, tag_target::TYPE_VALUE, 0x68CA),
             element_identify(element_type::STRING, &tag_target::type, tag_target::TYPE, 0x63CA),
-            element_identify(element_type::INTEGER_LIST, &tag_target::uids, tag_target::UID, 0x0) // multi type: track 0x63C5, edition 0x63C9, chapter 0x63C4, attachment 0x63C6
+            element_identify(element_type::UNSIGNED_INTEGER_LIST, &tag_target::uids, tag_target::TRACK_UID, 0x63C5),
+            element_identify(element_type::UNSIGNED_INTEGER_LIST, &tag_target::uids, tag_target::EDITION_UID, 0x63C9),
+            element_identify(element_type::UNSIGNED_INTEGER_LIST, &tag_target::uids, tag_target::CHAPTER_UID, 0x63C4),
+            element_identify(element_type::UNSIGNED_INTEGER_LIST, &tag_target::uids, tag_target::ATTACHMENT_UID, 0x63C6)
     };
     static ebml_id_identify_map map(tag_target_identifies, ARRAY_SIZE(tag_target_identifies));
 
