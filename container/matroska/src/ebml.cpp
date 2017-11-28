@@ -12,23 +12,23 @@ using namespace player;
 using namespace player::container::matroska;
 
 
-static int64_t read_string(istream &stream, int64_t position, uint64_t size, std::string &output)
-{
-    stream.seekg(position);
+constexpr uint32_t ReadBufferSize = 64;
 
-    char tmp[16];
-    while (stream && size > 16) {
-        stream.read(tmp, 16);
+static int64_t read_string(istream &stream, uint64_t size, std::string &output)
+{
+    char tmp[ReadBufferSize];
+    while (stream && size > ReadBufferSize) {
+        stream.read(tmp, ReadBufferSize);
         auto count = stream.gcount();
         output.append(tmp, static_cast<string::size_type>(count));
 
-        if (count < 16) {
+        if (count < ReadBufferSize) {
             return size - count;
         }
-        size -= 16;
+        size -= ReadBufferSize;
     }
 
-    if (size > 16) {
+    if (size > ReadBufferSize) {
         return size;
     } else if (size != 0) {
         stream.read(tmp, size);
@@ -41,15 +41,14 @@ static int64_t read_string(istream &stream, int64_t position, uint64_t size, std
     return 0;
 }
 
-static int64_t read_data(istream &stream, int64_t position, uint64_t size, char *data)
+inline static int64_t read_data(istream &stream, uint64_t size, char *data)
 {
-    stream.seekg(position);
     stream.read(data, size);
 
     return size - stream.gcount();
 }
 
-static unsigned get_prefix_zero_count(unsigned char c, int max_count)
+inline static unsigned get_prefix_zero_count(unsigned char c, int max_count)
 {
     while (c > 0) {
         c >>= 1;
@@ -62,11 +61,6 @@ static unsigned get_prefix_zero_count(unsigned char c, int max_count)
 
 int32_t ebml_parser::parse_next(ebml_node &result)
 {
-    stream.seekg(position);
-    if (!stream) {
-        return -1;
-    }
-
     auto pre = stream.peek();
     auto size = get_prefix_zero_count(static_cast<unsigned char>((pre >> 4) & 0x0f), 4) + 1;  // id element size
     if (size > 4) {
@@ -98,53 +92,53 @@ int32_t ebml_parser::parse_next(ebml_node &result)
     auto c = static_cast<unsigned char>(data[0] << size);
     data[0] = c >> size;
     result.size = util::from_big_endian_variable_unsigned(data, size);
+
     result.position = stream.tellg();
 
-    position = result.position + result.size;
     return 0;
 }
 
-int32_t ebml_parser::read_integer(const ebml_node &node, int64_t &result)
+int32_t ebml_parser::read_integer(size_t size, int64_t &result)
 {
-    assert(node.size <= 8);
+    assert(size <= 8);
 
     char data[8];
-    auto r = read_data(stream, node.position, node.size, data);
+    auto r = read_data(stream, size, data);
     if (r) {
         return static_cast<int32_t>(r);
     }
 
-    result = util::from_big_endian_variable(data, static_cast<unsigned int>(node.size));
+    result = util::from_big_endian_variable(data, static_cast<unsigned int>(size));
 
     return 0;
 }
 
-int32_t ebml_parser::read_unsigned_integer(const ebml_node &node, uint64_t &result)
+int32_t ebml_parser::read_unsigned_integer(size_t size, uint64_t &result)
 {
-    assert(node.size <= 8);
+    assert(size <= 8);
 
     char data[8];
-    auto r = read_data(stream, node.position, node.size, data);
+    auto r = read_data(stream, size, data);
     if (r) {
         return static_cast<int32_t>(r);
     }
 
-    result = util::from_big_endian_variable_unsigned(data, static_cast<unsigned int>(node.size));
+    result = util::from_big_endian_variable_unsigned(data, static_cast<unsigned int>(size));
 
     return 0;
 }
 
-int32_t ebml_parser::read_float(const ebml_node &node, double &result)
+int32_t ebml_parser::read_float(size_t size, double &result)
 {
-    assert(node.size == 4 || node.size == 8);
+    assert(size == 4 || size == 8);
 
     char data[8];
-    auto r = read_data(stream, node.position, node.size, data);
+    auto r = read_data(stream, size, data);
     if (r) {
         return static_cast<int32_t>(r);
     }
 
-    if (4 == node.size) {
+    if (4 == size) {
         result = util::from_big_endian_float(data);
     } else {
         result = util::from_big_endian_double(data);
@@ -153,17 +147,17 @@ int32_t ebml_parser::read_float(const ebml_node &node, double &result)
     return 0;
 }
 
-int32_t ebml_parser::read_string(const ebml_node &node, std::string &result)
+int32_t ebml_parser::read_string(size_t size, std::string &result)
 {
-    return static_cast<int32_t>(::read_string(stream, node.position, node.size, result));
+    return static_cast<int32_t>(::read_string(stream, size, result));
 }
 
-int32_t ebml_parser::read_date(const ebml_node &node, int64_t &result)
+int32_t ebml_parser::read_date(int64_t &result)
 {
-    assert(node.size <= 8);
+    // assert(node.size == 8);
 
     char data[8];
-    auto r = read_data(stream, node.position, node.size, data);
+    auto r = read_data(stream, 8, data);
     if (r) {
         return static_cast<int32_t>(r);
     }
@@ -173,31 +167,88 @@ int32_t ebml_parser::read_date(const ebml_node &node, int64_t &result)
     return 0;
 }
 
-int32_t ebml_parser::read_binary(const ebml_node &node, std::vector<uint8_t> &result)
+int32_t ebml_parser::read_binary(size_t size, std::vector<uint8_t> &result)
 {
-    result.resize(node.size);
+    result.resize(size);
 
     uint64_t i = 0;
-    while (stream && i < node.size) {
-        result[i++] = static_cast<uint8_t>(stream.get());
+    char c;
+    while (stream.get(c) && i < size) {
+        result[i++] = static_cast<unsigned char>(c);
     }
 
-    return static_cast<int32_t>(node.size - i);
+    return static_cast<int32_t>(size - i);
 }
 
-void ebml_parser::set_current_pos(int64_t pos)
+void ebml_parser::set_stream_pos(int64_t pos)
 {
-    position = pos;
+    stream.seekg(pos);
 }
 
-void ebml_parser::down_to_sub_element(int64_t pos)
+int64_t ebml_parser::get_stream_pos() const
 {
-    stack.push(position);
-    position = pos;
+    return stream.tellg();
 }
 
-void ebml_parser::up_to_parent()
+int32_t ebml_parser::sync_to_ebml_id(uint32_t id)
 {
-    position = stack.top();
-    stack.pop();
+    int64_t pos = stream.tellg();
+
+    uint32_t i = 0;
+    while (stream) {
+        if (i == id) {
+            stream.seekg(pos - 4);
+            return 0;
+        }
+
+        i = (i << 8) | stream.get();
+        ++pos;
+    }
+
+    return -1;
+}
+
+int32_t ebml_parser::sync_to_ebml_id(uint32_t id, uint32_t id_size)
+{
+    int64_t pos = stream.tellg();
+    uint32_t i = 0;
+
+    if (1 == id_size) {
+        while (stream) {
+            if (i == id) {
+                stream.seekg(pos - 1);
+                return 0;
+            }
+
+            i = static_cast<uint32_t>(stream.get());
+            ++pos;
+        }
+
+        return -1;
+    }
+
+    uint32_t mask;
+    switch (id_size) {
+        case 2:
+            mask = 0xffff;
+            break;
+        case 3:
+            mask = 0xffffff;
+            break;
+        case 4:
+            return sync_to_ebml_id(id);
+        default:
+            return -1;
+    }
+    while (stream) {
+        if ((i & mask) == id) {
+            stream.seekg(pos - id_size);
+            return 0;
+        }
+
+        i = (i << 8) | stream.get();
+        ++pos;
+    }
+
+    return -1;
 }

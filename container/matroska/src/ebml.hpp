@@ -28,32 +28,45 @@ struct ebml_node
 class ebml_parser
 {
 public:
-    explicit ebml_parser(std::istream &stream, int64_t pos = 0) : stream(stream), position(pos), stack() { }
+    explicit ebml_parser(std::istream &stream) : stream(stream) { }
 
     int32_t parse_next(ebml_node &result);
 
-    void set_current_pos(int64_t pos);
+    int64_t get_stream_pos() const;
 
-    void down_to_sub_element(int64_t pos);
+    void set_stream_pos(int64_t pos);
 
-    void up_to_parent();
+    /**
+     * sync stream position to a special ebml, of which the id length is 4
+     *
+     * @param id ebml id. the length of the id must be 4
+     * @return zero if success, otherwise non-zero
+     */
+    int32_t sync_to_ebml_id(uint32_t id);
 
-    int32_t read_integer(const ebml_node &node, int64_t &result);
+    /**
+     * sync stream position to a special ebml.
+     *
+     * @param id ebml id
+     * @param id_size length of the id in bytes
+     * @return zero if success, otherwise non-zero
+     */
+    int32_t sync_to_ebml_id(uint32_t id, uint32_t id_size);
 
-    int32_t read_unsigned_integer(const ebml_node &node, uint64_t &result);
+    int32_t read_integer(size_t size, int64_t &result);
 
-    int32_t read_float(const ebml_node &node, double &result);
+    int32_t read_unsigned_integer(size_t size, uint64_t &result);
 
-    int32_t read_string(const ebml_node &node, std::string &result);
+    int32_t read_float(size_t size, double &result);
 
-    int32_t read_date(const ebml_node &node, int64_t &result);
+    int32_t read_string(size_t size, std::string &result);
 
-    int32_t read_binary(const ebml_node &node, std::vector<uint8_t> &result);
+    int32_t read_date(int64_t &result);
+
+    int32_t read_binary(size_t size, std::vector<uint8_t> &result);
 
 private:
     std::istream &stream;
-    int64_t position;
-    std::stack<int64_t> stack;
 };
 
 } // namespace matroska
