@@ -19,15 +19,56 @@ namespace matroska {
 
 
 template<typename T>
-using master_handler = void (*)(T &, const element_identify &, ebml_parser &, const ebml_node &);
+using master_handler = void (*)(T &, ebml_parser &, const ebml_node &);
+
+
+/**
+ * Level 1 elements:
+ *
+ * Meta Seek Information    [11][4D][9B][74]
+ * Segment Information      [15][49][A9][66]
+ * Cluster                  [1F][43][B6][75]
+ * Track                    [16][54][AE][6B]
+ * Cueing Data              [1C][53][BB][6B]
+ * Attachment               [19][41][A4][69]
+ * Chapters                 [10][43][A7][70]
+ * Tagging                  [12][54][C3][67]
+ */
+enum : uint32_t
+{
+    EBML_META_SEEK_INFO_ID = 0x114D9B74,
+    EBML_SEGMENT_INFO_ID = 0x1549A966,
+    EBML_CLUSTER_ID = 0x1F43B675,
+    EBML_TRACK_ID = 0x1654AE6B,
+    EBML_CUEING_DATA_ID = 0x1C53BB6B,
+    EBML_ATTACHMENT_ID = 0x1941A469,
+    EBML_CHAPTERS_ID = 0x1043A770,
+    EBML_TAGGING_ID = 0x1254C367
+};
 
 
 class parser_callback
 {
 public:
-    virtual void on_meta_seek_info(const meta_seek_head &seek_head) = 0;
+    virtual void handle_meta_seek_info(const meta_seek_head &seek_head, const ebml_node &node) = 0;
 
-    virtual void on_segment_info(const segment_info &seg_info) = 0;
+    virtual void handle_segment_info(const segment_info &seg_info, const ebml_node &node) = 0;
+
+    virtual void handle_cluster(const cluster &cluster_info, const ebml_node &node) = 0;
+
+    virtual void handle_track(const track &track_info, const ebml_node &node) = 0;
+
+    virtual void handle_cueing_data(const cue &cue_data, const ebml_node &node) = 0;
+
+    virtual void handle_attachment(const attachment &attach, const ebml_node &node) = 0;
+
+    virtual void handle_chapters(const chapter &chapter_info, const ebml_node &node) = 0;
+
+    virtual void handle_tagging(const tags &tags_info, const ebml_node &node) = 0;
+
+    virtual void handle_unknown(const ebml_node &node) = 0;
+
+    virtual bool need_parse_node(const ebml_node &node) = 0;
 
     virtual ~parser_callback() = default;
 };
@@ -62,9 +103,9 @@ public:
      * parse next one element from current position. before call it, the stream position must align
      * with an ebml-element
      *
-     * @return zero if success, otherwise non-zero
+     * @return ebml id if success, otherwise -1
      */
-    int32_t parse_next_element();
+    uint32_t parse_next_element();
 
     /**
      * seek stream position
@@ -72,7 +113,7 @@ public:
      * @param position stream read position
      * @return zero if success, otherwise non-zero
      */
-    int32_t seek(int64_t position);
+    void seek(int64_t position);
 
     /**
      * resync stream position to (probable) next cluster element start position.
@@ -104,11 +145,23 @@ public:
     int32_t read_element(T &result, uint32_t id, master_handler<T> handler = nullptr);
 
 private:
-    void do_meta_seek_info_parse();
+    void do_meta_seek_info_parse(const ebml_node &node);
 
-    void do_segment_info_parse();
+    void do_segment_info_parse(const ebml_node &node);
 
-    void do_cluster_parse();
+    void do_cluster_parse(const ebml_node &node);
+
+    void do_track_parse(const ebml_node &node);
+
+    void do_cueing_data_parse(const ebml_node &node);
+
+    void do_attachment_parse(const ebml_node &node);
+
+    void do_chapters_parse(const ebml_node &node);
+
+    void do_tagging_parse(const ebml_node &node);
+
+    void do_skip_parse(const ebml_node &node);
 
 private:
     std::unique_ptr<std::istream> in_stream;
