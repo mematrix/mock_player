@@ -11,7 +11,8 @@ using namespace player::container::matroska;
 
 #define ARRAY_SIZE(ary) (sizeof(ary) / sizeof(ary[0]))
 
-const ebml_id_identify_map &::player::container::matroska::get_ebml_header_identifies()
+template<>
+const master_element_identify &::player::container::matroska::get_identify<ebml_header>()
 {
     static element_identify ebml_header_identifies[] = {
             element_identify(element_type::UNSIGNED_INTEGER, &ebml_header::version, ebml_header::VERSION, 0x4286),
@@ -22,45 +23,49 @@ const ebml_id_identify_map &::player::container::matroska::get_ebml_header_ident
             element_identify(element_type::UNSIGNED_INTEGER, &ebml_header::doc_type_version, ebml_header::DOC_TYPE_VERSION, 0x4287),
             element_identify(element_type::UNSIGNED_INTEGER, &ebml_header::doc_type_read_version, ebml_header::DOC_TYPE_READ_VERSION, 0x4285)
     };
-    static ebml_id_identify_map map(ebml_header_identifies, ARRAY_SIZE(ebml_header_identifies));
+    static master_element_identify map(ebml_header_identifies, ARRAY_SIZE(ebml_header_identifies));
 
     return map;
 }
 
-const ebml_id_identify_map &::player::container::matroska::get_meta_seek_identifies()
+template<>
+const master_element_identify &::player::container::matroska::get_identify<meta_seek>()
 {
     static element_identify meta_seek_identifies[] = {
             element_identify(element_type::BINARY, &meta_seek::id, meta_seek::ID, 0x53AB),
             element_identify(element_type::UNSIGNED_INTEGER, &meta_seek::position, meta_seek::POSITION, 0x53AC)
     };
-    static ebml_id_identify_map map(meta_seek_identifies, ARRAY_SIZE(meta_seek_identifies));
+    static master_element_identify map(meta_seek_identifies, ARRAY_SIZE(meta_seek_identifies));
 
     return map;
 }
 
-const ebml_id_identify_map &::player::container::matroska::get_meta_seek_head_identifies()
+template<>
+const master_element_identify &::player::container::matroska::get_identify<meta_seek_head>()
 {
     static element_identify meta_seek_head_identifies[] = {
             element_identify(element_type::MULTIPLE_MASTER, &meta_seek_head::seeks, meta_seek_head::SEEK, 0x4DBB)
     };
-    static ebml_id_identify_map map(meta_seek_head_identifies, ARRAY_SIZE(meta_seek_head_identifies));
+    static master_element_identify map(meta_seek_head_identifies, ARRAY_SIZE(meta_seek_head_identifies));
 
     return map;
 }
 
-const ebml_id_identify_map &::player::container::matroska::get_segment_chapter_translate_identifies()
+template<>
+const master_element_identify &::player::container::matroska::get_identify<segment_chapter_translate>()
 {
     static element_identify segment_chapter_translate_identifies[] = {
             element_identify(element_type::UNSIGNED_INTEGER_LIST, &segment_chapter_translate::edition_uids, segment_chapter_translate::EDITION_UID, 0x69FC),
             element_identify(element_type::UNSIGNED_INTEGER, &segment_chapter_translate::codec, segment_chapter_translate::CODEC, 0x69BF),
             element_identify(element_type::BINARY, &segment_chapter_translate::id, segment_chapter_translate::ID, 0x69A5)
     };
-    static ebml_id_identify_map map(segment_chapter_translate_identifies, ARRAY_SIZE(segment_chapter_translate_identifies));
+    static master_element_identify map(segment_chapter_translate_identifies, ARRAY_SIZE(segment_chapter_translate_identifies));
 
     return map;
 }
 
-const ebml_id_identify_map &::player::container::matroska::get_segment_info_identifies()
+template<>
+const master_element_identify &::player::container::matroska::get_identify<segment_info>()
 {
     static element_identify segment_info_identifies[] = {
             element_identify(element_type::BINARY, &segment_info::uid, segment_info::UID, 0x73A4),
@@ -70,7 +75,7 @@ const ebml_id_identify_map &::player::container::matroska::get_segment_info_iden
             element_identify(element_type::BINARY, &segment_info::next_uid, segment_info::NEXT_UID, 0x3EB923),
             element_identify(element_type::STRING, &segment_info::next_filename, segment_info::NEXT_FILENAME, 0x3E83BB),
 
-            element_identify(element_type::MULTIPLE_MASTER, &segment_info::families, segment_info::FAMILY, 0x4444),
+            element_identify(element_type::BINARY_LIST, &segment_info::families, segment_info::FAMILY, 0x4444),
             element_identify(element_type::MULTIPLE_MASTER, &segment_info::chapter_translates, segment_info::CHAPTER_TRANSLATE, 0x6924),
 
             element_identify(element_type::UNSIGNED_INTEGER, &segment_info::timecode_scale, segment_info::TIMECODE_SCALE, 0x2AD7B1),
@@ -80,63 +85,69 @@ const ebml_id_identify_map &::player::container::matroska::get_segment_info_iden
             element_identify(element_type::STRING, &segment_info::muxing_app, segment_info::MUXING_APP, 0x4D80),
             element_identify(element_type::STRING, &segment_info::writing_app, segment_info::WRITING_APP, 0x5741)
     };
-    static ebml_id_identify_map map(segment_info_identifies, ARRAY_SIZE(segment_info_identifies));
+    static master_element_identify map(segment_info_identifies, ARRAY_SIZE(segment_info_identifies));
 
     return map;
 }
 
-const ebml_id_identify_map &::player::container::matroska::get_cluster_silent_tracks_identifies()
+template<>
+const master_element_identify &::player::container::matroska::get_identify<cluster_silent_tracks>()
 {
     static element_identify cluster_silent_tracks_identifies[] = {
             element_identify(element_type::UNSIGNED_INTEGER_LIST, &cluster_silent_tracks::numbers, cluster_silent_tracks::NUMBER, 0x58D7)
     };
-    static ebml_id_identify_map map(cluster_silent_tracks_identifies, ARRAY_SIZE(cluster_silent_tracks_identifies));
+    static master_element_identify map(cluster_silent_tracks_identifies, ARRAY_SIZE(cluster_silent_tracks_identifies));
 
     return map;
 }
 
-const ebml_id_identify_map &::player::container::matroska::get_cluster_block_more_identifies()
+template<>
+const master_element_identify &::player::container::matroska::get_identify<cluster_block_more>()
 {
     static element_identify cluster_block_more_identifies[] = {
             element_identify(element_type::UNSIGNED_INTEGER, &cluster_block_more::add_id, cluster_block_more::ADD_ID, 0xEE),
             element_identify(element_type::BINARY, &cluster_block_more::additional, cluster_block_more::ADDITIONAL, 0xA5)
     };
-    static ebml_id_identify_map map(cluster_block_more_identifies, ARRAY_SIZE(cluster_block_more_identifies));
+    static master_element_identify map(cluster_block_more_identifies, ARRAY_SIZE(cluster_block_more_identifies));
 
     return map;
 }
 
-const ebml_id_identify_map &::player::container::matroska::get_cluster_block_additions_identifies()
+template<>
+const master_element_identify &::player::container::matroska::get_identify<cluster_block_additions>()
 {
     static element_identify cluster_block_additions_identifies[] = {
             element_identify(element_type::MULTIPLE_MASTER, &cluster_block_additions::block_more, cluster_block_additions::BLOCK_MORE, 0xA6)
     };
-    static ebml_id_identify_map map(cluster_block_additions_identifies, ARRAY_SIZE(cluster_block_additions_identifies));
+    static master_element_identify map(cluster_block_additions_identifies, ARRAY_SIZE(cluster_block_additions_identifies));
 
     return map;
 }
 
-const ebml_id_identify_map &::player::container::matroska::get_cluster_time_slice_identifies()
+template<>
+const master_element_identify &::player::container::matroska::get_identify<cluster_time_slice>()
 {
     static element_identify cluster_time_slice_identifies[] = {
             element_identify(element_type::UNSIGNED_INTEGER, &cluster_time_slice::lace_number, cluster_time_slice::LACE_NUMBER, 0xCC)
     };
-    static ebml_id_identify_map map(cluster_time_slice_identifies, ARRAY_SIZE(cluster_time_slice_identifies));
+    static master_element_identify map(cluster_time_slice_identifies, ARRAY_SIZE(cluster_time_slice_identifies));
 
     return map;
 }
 
-const ebml_id_identify_map &::player::container::matroska::get_cluster_slices_identifies()
+template<>
+const master_element_identify &::player::container::matroska::get_identify<cluster_slices>()
 {
     static element_identify cluster_slices_identifies[] = {
             element_identify(element_type::MULTIPLE_MASTER, &cluster_slices::time_slices, cluster_slices::TIME_SLICE, 0xE8)
     };
-    static ebml_id_identify_map map(cluster_slices_identifies, ARRAY_SIZE(cluster_slices_identifies));
+    static master_element_identify map(cluster_slices_identifies, ARRAY_SIZE(cluster_slices_identifies));
 
     return map;
 }
 
-const ebml_id_identify_map &::player::container::matroska::get_cluster_block_identifies()
+template<>
+const master_element_identify &::player::container::matroska::get_identify<cluster_block>()
 {
     static element_identify cluster_block_identifies[] = {
             element_identify(element_type::BINARY, &cluster_block::block, cluster_block::BLOCK, 0xA1),
@@ -148,39 +159,42 @@ const ebml_id_identify_map &::player::container::matroska::get_cluster_block_ide
             element_identify(element_type::SIGNED_INTEGER, &cluster_block::discard_padding, cluster_block::DISCARD_PADDING, 0x75A2),
             element_identify(element_type::MASTER, &cluster_block::slices, cluster_block::SLICES, 0x8E)
     };
-    static ebml_id_identify_map map(cluster_block_identifies, ARRAY_SIZE(cluster_block_identifies));
+    static master_element_identify map(cluster_block_identifies, ARRAY_SIZE(cluster_block_identifies));
 
     return map;
 }
 
-const ebml_id_identify_map &::player::container::matroska::get_cluster_identifies()
+template<>
+const master_element_identify &::player::container::matroska::get_identify<cluster>()
 {
     static element_identify cluster_identifies[] = {
             element_identify(element_type::UNSIGNED_INTEGER, &cluster::timecode, cluster::TIMECODE, 0xE7),
             element_identify(element_type::MASTER, &cluster::silent_tracks, cluster::SILENT_TRACKS, 0x5854),
             element_identify(element_type::UNSIGNED_INTEGER, &cluster::position, cluster::POSITION, 0xA7),
             element_identify(element_type::UNSIGNED_INTEGER, &cluster::prev_size, cluster::PREV_SIZE, 0xAB),
-            element_identify(element_type::MULTIPLE_MASTER, &cluster::simple_blocks, cluster::SIMPLE_BLOCK, 0xA3),
+            element_identify(element_type::BINARY_LIST, &cluster::simple_blocks, cluster::SIMPLE_BLOCK, 0xA3),
             element_identify(element_type::MULTIPLE_MASTER, &cluster::block_group, cluster::BLOCK_GROUP, 0xA0)
     };
-    static ebml_id_identify_map map(cluster_identifies, ARRAY_SIZE(cluster_identifies));
+    static master_element_identify map(cluster_identifies, ARRAY_SIZE(cluster_identifies));
 
     return map;
 }
 
-const ebml_id_identify_map &::player::container::matroska::get_track_translate_identifies()
+template<>
+const master_element_identify &::player::container::matroska::get_identify<track_translate>()
 {
     static element_identify track_translate_identifies[] = {
             element_identify(element_type::UNSIGNED_INTEGER_LIST, &track_translate::edition_uids, track_translate::EDITION_UID, 0x66FC),
             element_identify(element_type::UNSIGNED_INTEGER, &track_translate::codec, track_translate::CODEC, 0x66BF),
             element_identify(element_type::BINARY, &track_translate::track_id, track_translate::TRACK_ID, 0x66A5)
     };
-    static ebml_id_identify_map map(track_translate_identifies, ARRAY_SIZE(track_translate_identifies));
+    static master_element_identify map(track_translate_identifies, ARRAY_SIZE(track_translate_identifies));
 
     return map;
 }
 
-const ebml_id_identify_map &::player::container::matroska::get_track_video_color_metadata_identifies()
+template<>
+const master_element_identify &::player::container::matroska::get_identify<track_video_color_metadata>()
 {
     static element_identify track_video_color_metadata_identifies[] = {
             element_identify(element_type::FLOAT, &track_video_color_metadata::primary_r_chromaticity_x, track_video_color_metadata::PRIMARY_R_CHROMATICITY_X, 0x55D1),
@@ -194,12 +208,13 @@ const ebml_id_identify_map &::player::container::matroska::get_track_video_color
             element_identify(element_type::FLOAT, &track_video_color_metadata::luminance_max, track_video_color_metadata::LUMINANCE_MAX, 0x55D9),
             element_identify(element_type::FLOAT, &track_video_color_metadata::luminance_min, track_video_color_metadata::LUMINANCE_MIN, 0x55DA)
     };
-    static ebml_id_identify_map map(track_video_color_metadata_identifies, ARRAY_SIZE(track_video_color_metadata_identifies));
+    static master_element_identify map(track_video_color_metadata_identifies, ARRAY_SIZE(track_video_color_metadata_identifies));
 
     return map;
 }
 
-const ebml_id_identify_map &::player::container::matroska::get_track_video_color_identifies()
+template<>
+const master_element_identify &::player::container::matroska::get_identify<track_video_color>()
 {
     static element_identify track_video_color_identifies[] = {
             element_identify(element_type::UNSIGNED_INTEGER, &track_video_color::matrix_coefficients, track_video_color::MATRIX_COEFFICIENTS, 0x55B1),
@@ -217,12 +232,13 @@ const ebml_id_identify_map &::player::container::matroska::get_track_video_color
             element_identify(element_type::UNSIGNED_INTEGER, &track_video_color::max_fall, track_video_color::MAX_FALL, 0x55BD),
             element_identify(element_type::OPTIONAL_MASTER, &track_video_color::mastering_metadata, track_video_color::MASTERING_METADATA, 0x55D0)
     };
-    static ebml_id_identify_map map(track_video_color_identifies, ARRAY_SIZE(track_video_color_identifies));
+    static master_element_identify map(track_video_color_identifies, ARRAY_SIZE(track_video_color_identifies));
 
     return map;
 }
 
-const ebml_id_identify_map &::player::container::matroska::get_track_video_identifies()
+template<>
+const master_element_identify &::player::container::matroska::get_identify<track_video>()
 {
     static element_identify track_video_identifies[] = {
             element_identify(element_type::UNSIGNED_INTEGER, &track_video::flag_interlaced, track_video::FLAG_INTERLACED, 0x9A),
@@ -242,12 +258,13 @@ const ebml_id_identify_map &::player::container::matroska::get_track_video_ident
             element_identify(element_type::BINARY, &track_video::color_space, track_video::COLOR_SPACE, 0x2EB524),
             element_identify(element_type::OPTIONAL_MASTER, &track_video::color, track_video::COLOR, 0x55B0)
     };
-    static ebml_id_identify_map map(track_video_identifies, ARRAY_SIZE(track_video_identifies));
+    static master_element_identify map(track_video_identifies, ARRAY_SIZE(track_video_identifies));
 
     return map;
 }
 
-const ebml_id_identify_map &::player::container::matroska::get_track_audio_identifies()
+template<>
+const master_element_identify &::player::container::matroska::get_identify<track_audio>()
 {
     static element_identify track_audio_identifies[] = {
             element_identify(element_type::FLOAT, &track_audio::sampling_frequency, track_audio::SAMPLING_FREQUENCY, 0xB5),
@@ -255,65 +272,71 @@ const ebml_id_identify_map &::player::container::matroska::get_track_audio_ident
             element_identify(element_type::UNSIGNED_INTEGER, &track_audio::channels, track_audio::CHANNELS, 0x9F),
             element_identify(element_type::UNSIGNED_INTEGER, &track_audio::bit_depth, track_audio::BIT_DEPTH, 0x6264)
     };
-    static ebml_id_identify_map map(track_audio_identifies, ARRAY_SIZE(track_audio_identifies));
+    static master_element_identify map(track_audio_identifies, ARRAY_SIZE(track_audio_identifies));
 
     return map;
 }
 
-const ebml_id_identify_map &::player::container::matroska::get_track_operation_plane_identifies()
+template<>
+const master_element_identify &::player::container::matroska::get_identify<track_operation_plane>()
 {
     static element_identify track_operation_plane_identifies[] = {
             element_identify(element_type::UNSIGNED_INTEGER, &track_operation_plane::uid, track_operation_plane::UID, 0xE5),
             element_identify(element_type::UNSIGNED_INTEGER, &track_operation_plane::type, track_operation_plane::TYPE, 0xE6)
     };
-    static ebml_id_identify_map map(track_operation_plane_identifies, ARRAY_SIZE(track_operation_plane_identifies));
+    static master_element_identify map(track_operation_plane_identifies, ARRAY_SIZE(track_operation_plane_identifies));
 
     return map;
 }
 
-const ebml_id_identify_map &::player::container::matroska::get_track_operation_combine_planes_identifies()
+template<>
+const master_element_identify &::player::container::matroska::get_identify<track_operation_combine_planes>()
 {
     static element_identify track_operation_combine_planes_identifies[] = {
             element_identify(element_type::MULTIPLE_MASTER, &track_operation_combine_planes::track_planes, track_operation_combine_planes::TRACK_PLANE, 0xE4)
     };
-    static ebml_id_identify_map map(track_operation_combine_planes_identifies, ARRAY_SIZE(track_operation_combine_planes_identifies));
+    static master_element_identify map(track_operation_combine_planes_identifies, ARRAY_SIZE(track_operation_combine_planes_identifies));
 
     return map;
 }
 
-const ebml_id_identify_map &::player::container::matroska::get_track_operation_join_blocks_identifies()
+template<>
+const master_element_identify &::player::container::matroska::get_identify<track_operation_join_blocks>()
 {
     static element_identify track_operation_join_blocks_identifies[] = {
             element_identify(element_type::UNSIGNED_INTEGER_LIST, &track_operation_join_blocks::uids, track_operation_join_blocks::UID, 0xED)
     };
-    static ebml_id_identify_map map(track_operation_join_blocks_identifies, ARRAY_SIZE(track_operation_join_blocks_identifies));
+    static master_element_identify map(track_operation_join_blocks_identifies, ARRAY_SIZE(track_operation_join_blocks_identifies));
 
     return map;
 }
 
-const ebml_id_identify_map &::player::container::matroska::get_track_operation_identifies()
+template<>
+const master_element_identify &::player::container::matroska::get_identify<track_operation>()
 {
     static element_identify track_operation_identifies[] = {
             element_identify(element_type::MASTER, &track_operation::combine_planes, track_operation::TRACK_COMBINE_PLANES, 0xE3),
             element_identify(element_type::MASTER, &track_operation::join_blocks, track_operation::TRACK_JOIN_BLOCKS, 0xE9)
     };
-    static ebml_id_identify_map map(track_operation_identifies, ARRAY_SIZE(track_operation_identifies));
+    static master_element_identify map(track_operation_identifies, ARRAY_SIZE(track_operation_identifies));
 
     return map;
 }
 
-const ebml_id_identify_map &::player::container::matroska::get_track_content_compression_identifies()
+template<>
+const master_element_identify &::player::container::matroska::get_identify<track_content_compression>()
 {
     static element_identify track_content_compression_identifies[] = {
             element_identify(element_type::UNSIGNED_INTEGER, &track_content_compression::algorithm, track_content_compression::ALGORITHM, 0x4254),
             element_identify(element_type::BINARY, &track_content_compression::settings, track_content_compression::SETTINGS, 0x4255)
     };
-    static ebml_id_identify_map map(track_content_compression_identifies, ARRAY_SIZE(track_content_compression_identifies));
+    static master_element_identify map(track_content_compression_identifies, ARRAY_SIZE(track_content_compression_identifies));
 
     return map;
 }
 
-const ebml_id_identify_map &::player::container::matroska::get_track_content_encryption_identifies()
+template<>
+const master_element_identify &::player::container::matroska::get_identify<track_content_encryption>()
 {
     static element_identify track_content_encryption_identifies[] = {
             element_identify(element_type::UNSIGNED_INTEGER, &track_content_encryption::algorithm, track_content_encryption::ALGORITHM, 0x47E1),
@@ -323,12 +346,13 @@ const ebml_id_identify_map &::player::container::matroska::get_track_content_enc
             element_identify(element_type::UNSIGNED_INTEGER, &track_content_encryption::sig_algorithm, track_content_encryption::SIG_ALGORITHM, 0x47E5),
             element_identify(element_type::UNSIGNED_INTEGER, &track_content_encryption::sig_hash_algorithm, track_content_encryption::SIG_HASH_ALGORITHM, 0x47E6)
     };
-    static ebml_id_identify_map map(track_content_encryption_identifies, ARRAY_SIZE(track_content_encryption_identifies));
+    static master_element_identify map(track_content_encryption_identifies, ARRAY_SIZE(track_content_encryption_identifies));
 
     return map;
 }
 
-const ebml_id_identify_map &::player::container::matroska::get_track_content_encoding_identifies()
+template<>
+const master_element_identify &::player::container::matroska::get_identify<track_content_encoding>()
 {
     static element_identify track_content_encoding_identifies[] = {
             element_identify(element_type::UNSIGNED_INTEGER, &track_content_encoding::order, track_content_encoding::ORDER, 0x5031),
@@ -337,22 +361,24 @@ const ebml_id_identify_map &::player::container::matroska::get_track_content_enc
             element_identify(element_type::OPTIONAL_MASTER, &track_content_encoding::compression, track_content_encoding::COMPRESSION, 0x5034),
             element_identify(element_type::OPTIONAL_MASTER, &track_content_encoding::encryption, track_content_encoding::ENCRYPTION, 0x5035)
     };
-    static ebml_id_identify_map map(track_content_encoding_identifies, ARRAY_SIZE(track_content_encoding_identifies));
+    static master_element_identify map(track_content_encoding_identifies, ARRAY_SIZE(track_content_encoding_identifies));
 
     return map;
 }
 
-const ebml_id_identify_map &::player::container::matroska::get_track_content_encodings_identifies()
+template<>
+const master_element_identify &::player::container::matroska::get_identify<track_content_encodings>()
 {
     static element_identify track_content_encodings_identifies[] = {
             element_identify(element_type::MULTIPLE_MASTER, &track_content_encodings::content_encodings, track_content_encodings::CONTENT_ENCODING, 0x6240)
     };
-    static ebml_id_identify_map map(track_content_encodings_identifies, ARRAY_SIZE(track_content_encodings_identifies));
+    static master_element_identify map(track_content_encodings_identifies, ARRAY_SIZE(track_content_encodings_identifies));
 
     return map;
 }
 
-const ebml_id_identify_map &::player::container::matroska::get_track_entry_identifies()
+template<>
+const master_element_identify &::player::container::matroska::get_identify<track_entry>()
 {
     static element_identify track_entry_identifies[] = {
             element_identify(element_type::UNSIGNED_INTEGER, &track_entry::number, track_entry::NUMBER, 0xD7),
@@ -383,32 +409,35 @@ const ebml_id_identify_map &::player::container::matroska::get_track_entry_ident
             element_identify(element_type::OPTIONAL_MASTER, &track_entry::operation, track_entry::OPERATION, 0xE2),
             element_identify(element_type::OPTIONAL_MASTER, &track_entry::content_encodings, track_entry::CONTENT_ENCODINGS, 0x6D80)
     };
-    static ebml_id_identify_map map(track_entry_identifies, ARRAY_SIZE(track_entry_identifies));
+    static master_element_identify map(track_entry_identifies, ARRAY_SIZE(track_entry_identifies));
 
     return map;
 }
 
-const ebml_id_identify_map &::player::container::matroska::get_track_identifies()
+template<>
+const master_element_identify &::player::container::matroska::get_identify<track>()
 {
     static element_identify track_identifies[] = {
             element_identify(element_type::MULTIPLE_MASTER, &track::entries, track::TRACK_ENTRY, 0xAE)
     };
-    static ebml_id_identify_map map(track_identifies, ARRAY_SIZE(track_identifies));
+    static master_element_identify map(track_identifies, ARRAY_SIZE(track_identifies));
 
     return map;
 }
 
-const ebml_id_identify_map &::player::container::matroska::get_cue_track_reference_identifies()
+template<>
+const master_element_identify &::player::container::matroska::get_identify<cue_track_reference>()
 {
     static element_identify cue_track_reference_identifies[] = {
             element_identify(element_type::UNSIGNED_INTEGER, &cue_track_reference::ref_time, cue_track_reference::REF_TIME, 0x96)
     };
-    static ebml_id_identify_map map(cue_track_reference_identifies, ARRAY_SIZE(cue_track_reference_identifies));
+    static master_element_identify map(cue_track_reference_identifies, ARRAY_SIZE(cue_track_reference_identifies));
 
     return map;
 }
 
-const ebml_id_identify_map &::player::container::matroska::get_cue_track_position_identifies()
+template<>
+const master_element_identify &::player::container::matroska::get_identify<cue_track_position>()
 {
     static element_identify cue_track_position_identifies[] = {
             element_identify(element_type::UNSIGNED_INTEGER, &cue_track_position::track, cue_track_position::TRACK, 0xF7),
@@ -419,33 +448,36 @@ const ebml_id_identify_map &::player::container::matroska::get_cue_track_positio
             element_identify(element_type::UNSIGNED_INTEGER, &cue_track_position::codec_state, cue_track_position::CODEC_STATE, 0xEA),
             element_identify(element_type::MULTIPLE_MASTER, &cue_track_position::references, cue_track_position::REFERENCE, 0xDB)
     };
-    static ebml_id_identify_map map(cue_track_position_identifies, ARRAY_SIZE(cue_track_position_identifies));
+    static master_element_identify map(cue_track_position_identifies, ARRAY_SIZE(cue_track_position_identifies));
 
     return map;
 }
 
-const ebml_id_identify_map &::player::container::matroska::get_cue_point_identifies()
+template<>
+const master_element_identify &::player::container::matroska::get_identify<cue_point>()
 {
     static element_identify cue_point_identifies[] = {
             element_identify(element_type::UNSIGNED_INTEGER, &cue_point::time, cue_point::TIME, 0xB3),
             element_identify(element_type::MULTIPLE_MASTER, &cue_point::track_positions, cue_point::TRACK_POSITIONS, 0xB7)
     };
-    static ebml_id_identify_map map(cue_point_identifies, ARRAY_SIZE(cue_point_identifies));
+    static master_element_identify map(cue_point_identifies, ARRAY_SIZE(cue_point_identifies));
 
     return map;
 }
 
-const ebml_id_identify_map &::player::container::matroska::get_cue_identifies()
+template<>
+const master_element_identify &::player::container::matroska::get_identify<cue>()
 {
     static element_identify cue_identifies[] = {
             element_identify(element_type::MULTIPLE_MASTER, &cue::cue_points, cue::CUE_POINT, 0xBB)
     };
-    static ebml_id_identify_map map(cue_identifies, ARRAY_SIZE(cue_identifies));
+    static master_element_identify map(cue_identifies, ARRAY_SIZE(cue_identifies));
 
     return map;
 }
 
-const ebml_id_identify_map &::player::container::matroska::get_attached_file_identifies()
+template<>
+const master_element_identify &::player::container::matroska::get_identify<attached_file>()
 {
     static element_identify attached_file_identifies[] = {
             element_identify(element_type::STRING, &attached_file::description, attached_file::DESCRIPTION, 0x467E),
@@ -454,67 +486,73 @@ const ebml_id_identify_map &::player::container::matroska::get_attached_file_ide
             element_identify(element_type::BINARY, &attached_file::data, attached_file::DATA, 0x465C),
             element_identify(element_type::UNSIGNED_INTEGER, &attached_file::uid, attached_file::UID, 0x46AE),
     };
-    static ebml_id_identify_map map(attached_file_identifies, ARRAY_SIZE(attached_file_identifies));
+    static master_element_identify map(attached_file_identifies, ARRAY_SIZE(attached_file_identifies));
 
     return map;
 }
 
-const ebml_id_identify_map &::player::container::matroska::get_attachment_identifies()
+template<>
+const master_element_identify &::player::container::matroska::get_identify<attachment>()
 {
     static element_identify attachment_identifies[] = {
             element_identify(element_type::MULTIPLE_MASTER, &attachment::attached_files, attachment::ATTACHED_FILE, 0x61A7)
     };
-    static ebml_id_identify_map map(attachment_identifies, ARRAY_SIZE(attachment_identifies));
+    static master_element_identify map(attachment_identifies, ARRAY_SIZE(attachment_identifies));
 
     return map;
 }
 
-const ebml_id_identify_map &::player::container::matroska::get_chapter_track_identifies()
+template<>
+const master_element_identify &::player::container::matroska::get_identify<chapter_track>()
 {
     static element_identify chapter_track_identifies[] = {
             element_identify(element_type::UNSIGNED_INTEGER_LIST, &chapter_track::track_numbers, chapter_track::TRACK_NUMBER, 0x89)
     };
-    static ebml_id_identify_map map(chapter_track_identifies, ARRAY_SIZE(chapter_track_identifies));
+    static master_element_identify map(chapter_track_identifies, ARRAY_SIZE(chapter_track_identifies));
 
     return map;
 }
 
-const ebml_id_identify_map &::player::container::matroska::get_chapter_display_identifies()
+template<>
+const master_element_identify &::player::container::matroska::get_identify<chapter_display>()
 {
     static element_identify chapter_display_identifies[] = {
             element_identify(element_type::STRING, &chapter_display::string, chapter_display::STRING, 0x85),
-            element_identify(element_type::MULTIPLE_MASTER, &chapter_display::languages, chapter_display::LANGUAGE, 0x437C),
-            element_identify(element_type::MULTIPLE_MASTER, &chapter_display::countries, chapter_display::COUNTRY, 0x437E)
+            element_identify(element_type::STRING_LIST, &chapter_display::languages, chapter_display::LANGUAGE, 0x437C),
+            element_identify(element_type::STRING_LIST, &chapter_display::countries, chapter_display::COUNTRY, 0x437E)
     };
-    static ebml_id_identify_map map(chapter_display_identifies, ARRAY_SIZE(chapter_display_identifies));
+    static master_element_identify map(chapter_display_identifies, ARRAY_SIZE(chapter_display_identifies));
 
     return map;
 }
 
-const ebml_id_identify_map &::player::container::matroska::get_chapter_process_command_identifies()
+template<>
+const master_element_identify &::player::container::matroska::get_identify<chapter_process_command>()
 {
     static element_identify chapter_process_command_identifies[] = {
             element_identify(element_type::UNSIGNED_INTEGER, &chapter_process_command::time, chapter_process_command::TIME, 0x6922),
             element_identify(element_type::BINARY, &chapter_process_command::data, chapter_process_command::DATA, 0x6933)
     };
-    static ebml_id_identify_map map(chapter_process_command_identifies, ARRAY_SIZE(chapter_process_command_identifies));
+    static master_element_identify map(chapter_process_command_identifies, ARRAY_SIZE(chapter_process_command_identifies));
 
     return map;
 }
 
-const ebml_id_identify_map &::player::container::matroska::get_chapter_process_identifies()
+template<>
+const master_element_identify &::player::container::matroska::get_identify<chapter_process>()
 {
     static element_identify chapter_process_identifies[] = {
             element_identify(element_type::UNSIGNED_INTEGER, &chapter_process::codec_id, chapter_process::CODEC_ID, 0x6955),
             element_identify(element_type::BINARY, &chapter_process::process_private, chapter_process::PRIVATE, 0x450D),
             element_identify(element_type::MULTIPLE_MASTER, &chapter_process::commands, chapter_process::COMMAND, 0x6911)
     };
-    static ebml_id_identify_map map(chapter_process_identifies, ARRAY_SIZE(chapter_process_identifies));
+    static master_element_identify map(chapter_process_identifies, ARRAY_SIZE(chapter_process_identifies));
 
     return map;
 }
 
-const ebml_id_identify_map &::player::container::matroska::get_chapter_atom_identifies()
+template<>
+const master_element_identify &::player::container::matroska::get_identify<chapter_atom>()
 {
     static element_identify chapter_atom_identifies[] = {
             element_identify(element_type::MULTIPLE_MASTER, &chapter_atom::atoms, chapter_atom::CHAPTER_ATOM, 0xB6),
@@ -531,12 +569,13 @@ const ebml_id_identify_map &::player::container::matroska::get_chapter_atom_iden
             element_identify(element_type::MULTIPLE_MASTER, &chapter_atom::displays, chapter_atom::DISPLAY, 0x80),
             element_identify(element_type::MULTIPLE_MASTER, &chapter_atom::processes, chapter_atom::PROCESS, 0x6944)
     };
-    static ebml_id_identify_map map(chapter_atom_identifies, ARRAY_SIZE(chapter_atom_identifies));
+    static master_element_identify map(chapter_atom_identifies, ARRAY_SIZE(chapter_atom_identifies));
 
     return map;
 }
 
-const ebml_id_identify_map &::player::container::matroska::get_chapter_edition_entry_identifies()
+template<>
+const master_element_identify &::player::container::matroska::get_identify<chapter_edition_entry>()
 {
     static element_identify chapter_edition_entry_identifies[] = {
             element_identify(element_type::UNSIGNED_INTEGER, &chapter_edition_entry::uid, chapter_edition_entry::UID, 0x45BC),
@@ -545,22 +584,24 @@ const ebml_id_identify_map &::player::container::matroska::get_chapter_edition_e
             element_identify(element_type::UNSIGNED_INTEGER, &chapter_edition_entry::flag_ordered, chapter_edition_entry::FLAG_ORDERED, 0x45DD),
             element_identify(element_type::MULTIPLE_MASTER, &chapter_edition_entry::chapter_atoms, chapter_edition_entry::CHAPTER_ATOM, 0xB6),
     };
-    static ebml_id_identify_map map(chapter_edition_entry_identifies, ARRAY_SIZE(chapter_edition_entry_identifies));
+    static master_element_identify map(chapter_edition_entry_identifies, ARRAY_SIZE(chapter_edition_entry_identifies));
 
     return map;
 }
 
-const ebml_id_identify_map &::player::container::matroska::get_chapter_identifies()
+template<>
+const master_element_identify &::player::container::matroska::get_identify<chapter>()
 {
     static element_identify chapter_identifies[] = {
             element_identify(element_type::MULTIPLE_MASTER, &chapter::edition_entries, chapter::EDITION_ENTRY, 0x45B9)
     };
-    static ebml_id_identify_map map(chapter_identifies, ARRAY_SIZE(chapter_identifies));
+    static master_element_identify map(chapter_identifies, ARRAY_SIZE(chapter_identifies));
 
     return map;
 }
 
-const ebml_id_identify_map &::player::container::matroska::get_tag_target_identifies()
+template<>
+const master_element_identify &::player::container::matroska::get_identify<tag_target>()
 {
     static element_identify tag_target_identifies[] = {
             element_identify(element_type::UNSIGNED_INTEGER, &tag_target::type_value, tag_target::TYPE_VALUE, 0x68CA),
@@ -570,12 +611,13 @@ const ebml_id_identify_map &::player::container::matroska::get_tag_target_identi
             element_identify(element_type::UNSIGNED_INTEGER_LIST, &tag_target::uids, tag_target::CHAPTER_UID, 0x63C4),
             element_identify(element_type::UNSIGNED_INTEGER_LIST, &tag_target::uids, tag_target::ATTACHMENT_UID, 0x63C6)
     };
-    static ebml_id_identify_map map(tag_target_identifies, ARRAY_SIZE(tag_target_identifies));
+    static master_element_identify map(tag_target_identifies, ARRAY_SIZE(tag_target_identifies));
 
     return map;
 }
 
-const ebml_id_identify_map &::player::container::matroska::get_simple_tag_identifies()
+template<>
+const master_element_identify &::player::container::matroska::get_identify<simple_tag>()
 {
     static element_identify simple_tag_identifies[] = {
             element_identify(element_type::MULTIPLE_MASTER, &simple_tag::tags, simple_tag::SIMPLE_TAG, 0x67C8),
@@ -585,33 +627,92 @@ const ebml_id_identify_map &::player::container::matroska::get_simple_tag_identi
             element_identify(element_type::STRING, &simple_tag::string, simple_tag::STRING, 0x4487),
             element_identify(element_type::BINARY, &simple_tag::bin, simple_tag::BINARY, 0x4485),
     };
-    static ebml_id_identify_map map(simple_tag_identifies, ARRAY_SIZE(simple_tag_identifies));
+    static master_element_identify map(simple_tag_identifies, ARRAY_SIZE(simple_tag_identifies));
 
     return map;
 }
 
-const ebml_id_identify_map &::player::container::matroska::get_tag_identifies()
+template<>
+const master_element_identify &::player::container::matroska::get_identify<tag>()
 {
     static element_identify tag_identifies[] = {
             element_identify(element_type::MASTER, &tag::target, tag::TARGETS, 0x63C0),
             element_identify(element_type::MULTIPLE_MASTER, &tag::simple_tags, tag::SIMPLE_TAG, 0x67C8)
     };
-    static ebml_id_identify_map map(tag_identifies, ARRAY_SIZE(tag_identifies));
+    static master_element_identify map(tag_identifies, ARRAY_SIZE(tag_identifies));
 
     return map;
 }
 
-const ebml_id_identify_map &::player::container::matroska::get_tags_identifies()
+template<>
+const master_element_identify &::player::container::matroska::get_identify<tags>()
 {
     static element_identify tags_identifies[] = {
             element_identify(element_type::MULTIPLE_MASTER, &tags::tag_list, tags::TAG, 0x7373)
     };
-    static ebml_id_identify_map map(tags_identifies, ARRAY_SIZE(tags_identifies));
+    static master_element_identify map(tags_identifies, ARRAY_SIZE(tags_identifies));
 
     return map;
 }
 
-ebml_id_identify_map::ebml_id_identify_map(const element_identify *elements, uint32_t size) : ebml_map()
+/*const master_element_identify *::player::container::matroska::get_id_map(uint32_t id)
+{
+    switch (id) {
+        case 0x1A45DFA3:
+            return &get_identify<ebml_header>();
+        case 0x4DBB:
+            return &get_identify<meta_seek>();
+        case 0x114D9B74:
+            return &get_identify<meta_seek_head>();
+        case 0x6924:
+            return &get_identify<segment_chapter_translate>();
+        case 0x1549A966:
+            return &get_identify<segment_info>();
+        case 0x5854:
+            return &get_identify<cluster_silent_tracks>();
+        case 0xA0:
+            return &get_identify<cluster_block>();
+        case 0x75A1:
+            return &get_identify<cluster_block_additions>();
+        case 0xA6:
+            return &get_identify<cluster_block_more>();
+        case 0xE8:
+            return &get_identify<cluster_time_slice>();
+        case 0x8E:
+            return &get_identify<cluster_slices>();
+        case 0x1F43B675:
+            return &get_identify<cluster>();
+        case 0x6624:
+            return &get_identify<track_translate>();
+        case 0x55D0:
+            return &get_identify<track_video_color_metadata>();
+        case 0x55B0:
+            return &get_identify<track_video_color>();
+        case 0xE0:
+            return &get_identify<track_video>();
+        case 0xE1:
+            return &get_identify<track_audio>();
+        case 0xE4:
+            return &get_identify<track_operation_plane>();
+        case 0xE3:
+            return &get_identify<track_operation_combine_planes>();
+        case 0xE9:
+            return &get_identify<track_operation_join_blocks>();
+        case 0xE2:
+            return &get_identify<track_operation>();
+        case 0x5034:
+            return &get_identify<track_content_compression>();
+        case 0x5035:
+            return &get_identify<track_content_encryption>();
+        case 0x6240:
+            return &get_identify<track_content_encoding>();
+        case 0x6D80:
+            return &get_identify<track_content_encodings>();
+    }
+    return nullptr;
+}*/
+
+master_element_identify::master_element_identify(const element_identify *elements, uint32_t size) : ebml_map()
 {
     ebml_map.reserve(size);
     for (int i = 0; i < size; ++i) {
@@ -623,7 +724,7 @@ ebml_id_identify_map::ebml_id_identify_map(const element_identify *elements, uin
     });
 }
 
-const element_identify *ebml_id_identify_map::get(uint32_t id) const
+const element_identify *master_element_identify::get(uint32_t id) const
 {
     auto it = std::lower_bound(ebml_map.begin(), ebml_map.end(), id, [](const entry &map_value, uint32_t val) {
         return map_value.first < val;
