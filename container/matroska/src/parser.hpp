@@ -73,14 +73,14 @@ public:
     virtual ~parser_callback() = default;
 };
 
-class parser
+class matroska_parser
 {
 public:
-    parser(std::unique_ptr<std::istream> &&stream, parser_callback &cb);
+    matroska_parser(std::istream &stream, parser_callback &cb);
 
-    parser(const parser &) = delete;
+    matroska_parser(const matroska_parser &) = delete;
 
-    parser &operator=(const parser &) = delete;
+    matroska_parser &operator=(const matroska_parser &) = delete;
 
     /**
      * parse matroska file header element. this method should be called firstly
@@ -164,7 +164,6 @@ private:
     void do_skip_parse(const ebml_node &node);
 
 private:
-    std::unique_ptr<std::istream> in_stream;
     parser_callback &callback;
     ebml_parser ep;
 };

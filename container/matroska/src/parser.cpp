@@ -32,7 +32,8 @@ template<typename T>
 void parse_sub_master(T &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node) { }
 
 template<>
-void parse_sub_master<meta_seek_head>(meta_seek_head &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node) {
+void parse_sub_master<meta_seek_head>(meta_seek_head &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node)
+{
     if (node.id == 0x4DBB) {
         result.seeks.emplace_back();
         read_master(result.seeks.back(), parser, node);
@@ -41,7 +42,8 @@ void parse_sub_master<meta_seek_head>(meta_seek_head &result, const element_iden
 }
 
 template<>
-void parse_sub_master<segment_info>(segment_info &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node){
+void parse_sub_master<segment_info>(segment_info &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node)
+{
     if (node.id == 0x6924) {
         result.chapter_translates.emplace_back();
         read_master(result.chapter_translates.back(), parser, node);
@@ -50,7 +52,8 @@ void parse_sub_master<segment_info>(segment_info &result, const element_identify
 }
 
 template<>
-void parse_sub_master<cluster_block_additions>(cluster_block_additions &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node) {
+void parse_sub_master<cluster_block_additions>(cluster_block_additions &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node)
+{
     if (node.id == 0xA6) {
         result.block_more.emplace_back();
         read_master(result.block_more.back(), parser, node);
@@ -59,7 +62,8 @@ void parse_sub_master<cluster_block_additions>(cluster_block_additions &result, 
 }
 
 template<>
-void parse_sub_master<cluster_slices>(cluster_slices &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node) {
+void parse_sub_master<cluster_slices>(cluster_slices &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node)
+{
     if (node.id == 0xE8) {
         result.time_slices.emplace_back();
         read_master(result.time_slices.back(), parser, node);
@@ -68,18 +72,20 @@ void parse_sub_master<cluster_slices>(cluster_slices &result, const element_iden
 }
 
 template<>
-void parse_sub_master<cluster_block>(cluster_block &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node) {
+void parse_sub_master<cluster_block>(cluster_block &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node)
+{
     if (node.id == 0x75A1) {
         read_master(result.additions, parser, node);
         result.mask |= identify.name_mask;
-    } else if(node.id == 0x8E) {
+    } else if (node.id == 0x8E) {
         read_master(result.slices, parser, node);
         result.mask |= identify.name_mask;
     }
 }
 
 template<>
-void parse_sub_master<cluster>(cluster &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node) {
+void parse_sub_master<cluster>(cluster &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node)
+{
     if (node.id == 0x5854) {
         read_master(result.silent_tracks, parser, node);
         result.mask |= identify.name_mask;
@@ -91,7 +97,8 @@ void parse_sub_master<cluster>(cluster &result, const element_identify &identify
 }
 
 template<>
-void parse_sub_master<track_video_color>(track_video_color &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node) {
+void parse_sub_master<track_video_color>(track_video_color &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node)
+{
     if (node.id == 0x55D0) {
         result.mastering_metadata.reset(new track_video_color_metadata());
         read_master(*result.mastering_metadata, parser, node);
@@ -100,7 +107,8 @@ void parse_sub_master<track_video_color>(track_video_color &result, const elemen
 }
 
 template<>
-void parse_sub_master<track_video>(track_video &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node) {
+void parse_sub_master<track_video>(track_video &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node)
+{
     if (node.id == 0x55B0) {
         result.color.reset(new track_video_color());
         read_master(*result.color, parser, node);
@@ -109,7 +117,8 @@ void parse_sub_master<track_video>(track_video &result, const element_identify &
 }
 
 template<>
-void parse_sub_master<track_operation_combine_planes>(track_operation_combine_planes &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node) {
+void parse_sub_master<track_operation_combine_planes>(track_operation_combine_planes &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node)
+{
     if (node.id == 0xE4) {
         result.track_planes.emplace_back();
         read_master(result.track_planes.back(), parser, node);
@@ -118,18 +127,20 @@ void parse_sub_master<track_operation_combine_planes>(track_operation_combine_pl
 }
 
 template<>
-void parse_sub_master<track_operation>(track_operation &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node) {
+void parse_sub_master<track_operation>(track_operation &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node)
+{
     if (node.id == 0xE3) {
         read_master(result.combine_planes, parser, node);
         result.mask |= identify.name_mask;
-    } else if(node.id == 0xE9) {
+    } else if (node.id == 0xE9) {
         read_master(result.join_blocks, parser, node);
         result.mask |= identify.name_mask;
     }
 }
 
 template<>
-void parse_sub_master<track_content_encoding>(track_content_encoding &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node) {
+void parse_sub_master<track_content_encoding>(track_content_encoding &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node)
+{
     if (node.id == 0x5034) {
         result.compression.reset(new track_content_compression());
         read_master(*result.compression, parser, node);
@@ -142,7 +153,8 @@ void parse_sub_master<track_content_encoding>(track_content_encoding &result, co
 }
 
 template<>
-void parse_sub_master<track_content_encodings>(track_content_encodings &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node) {
+void parse_sub_master<track_content_encodings>(track_content_encodings &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node)
+{
     if (node.id == 0x6240) {
         result.content_encodings.emplace_back();
         read_master(result.content_encodings.back(), parser, node);
@@ -151,11 +163,12 @@ void parse_sub_master<track_content_encodings>(track_content_encodings &result, 
 }
 
 template<>
-void parse_sub_master<track_entry>(track_entry &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node) {
+void parse_sub_master<track_entry>(track_entry &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node)
+{
     if (node.id == 0x6624) {
         result.translate.emplace_back();
         read_master(result.translate.back(), parser, node);
-    } else if(node.id == 0xE0) {
+    } else if (node.id == 0xE0) {
         result.video.reset(new track_video());
         read_master(*result.video, parser, node);
     } else if (node.id == 0xE1) {
@@ -164,7 +177,7 @@ void parse_sub_master<track_entry>(track_entry &result, const element_identify &
     } else if (node.id == 0xE2) {
         result.operation.reset(new track_operation());
         read_master(*result.operation, parser, node);
-    } else if (node.id == 0x6D80){
+    } else if (node.id == 0x6D80) {
         result.content_encodings.reset(new track_content_encodings());
         read_master(*result.content_encodings, parser, node);
     } else {
@@ -175,8 +188,9 @@ void parse_sub_master<track_entry>(track_entry &result, const element_identify &
 }
 
 template<>
-void parse_sub_master<track>(track &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node){
-    if (node.id == 0xAE){
+void parse_sub_master<track>(track &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node)
+{
+    if (node.id == 0xAE) {
         result.entries.emplace_back();
         read_master(result.entries.back(), parser, node);
         result.mask |= identify.name_mask;
@@ -184,7 +198,8 @@ void parse_sub_master<track>(track &result, const element_identify &identify, eb
 }
 
 template<>
-void parse_sub_master<cue_track_position>(cue_track_position &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node) {
+void parse_sub_master<cue_track_position>(cue_track_position &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node)
+{
     if (node.id == 0xDB) {
         result.references.emplace_back();
         read_master(result.references.back(), parser, node);
@@ -193,7 +208,8 @@ void parse_sub_master<cue_track_position>(cue_track_position &result, const elem
 }
 
 template<>
-void parse_sub_master<cue_point>(cue_point &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node) {
+void parse_sub_master<cue_point>(cue_point &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node)
+{
     if (node.id == 0xB7) {
         result.track_positions.emplace_back();
         read_master(result.track_positions.back(), parser, node);
@@ -202,7 +218,8 @@ void parse_sub_master<cue_point>(cue_point &result, const element_identify &iden
 }
 
 template<>
-void parse_sub_master<cue>(cue &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node){
+void parse_sub_master<cue>(cue &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node)
+{
     if (node.id == 0xBB) {
         result.cue_points.emplace_back();
         read_master(result.cue_points.back(), parser, node);
@@ -211,7 +228,8 @@ void parse_sub_master<cue>(cue &result, const element_identify &identify, ebml_p
 }
 
 template<>
-void parse_sub_master<attachment>(attachment &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node) {
+void parse_sub_master<attachment>(attachment &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node)
+{
     if (node.id == 0x61A7) {
         result.attached_files.emplace_back();
         read_master(result.attached_files.back(), parser, node);
@@ -220,7 +238,8 @@ void parse_sub_master<attachment>(attachment &result, const element_identify &id
 }
 
 template<>
-void parse_sub_master<chapter_process>(chapter_process &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node) {
+void parse_sub_master<chapter_process>(chapter_process &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node)
+{
     if (node.id == 0x6911) {
         result.commands.emplace_back();
         read_master(result.commands.back(), parser, node);
@@ -229,7 +248,8 @@ void parse_sub_master<chapter_process>(chapter_process &result, const element_id
 }
 
 template<>
-void parse_sub_master<chapter_atom>(chapter_atom &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node) {
+void parse_sub_master<chapter_atom>(chapter_atom &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node)
+{
     if (node.id == 0xB6) {
         result.atoms.emplace_back();
         read_master(result.atoms.back(), parser, node);
@@ -249,7 +269,8 @@ void parse_sub_master<chapter_atom>(chapter_atom &result, const element_identify
 }
 
 template<>
-void parse_sub_master<chapter_edition_entry>(chapter_edition_entry &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node) {
+void parse_sub_master<chapter_edition_entry>(chapter_edition_entry &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node)
+{
     if (node.id == 0xB6) {
         result.chapter_atoms.emplace_back();
         read_master(result.chapter_atoms.back(), parser, node);
@@ -258,7 +279,8 @@ void parse_sub_master<chapter_edition_entry>(chapter_edition_entry &result, cons
 }
 
 template<>
-void parse_sub_master<chapter>(chapter &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node) {
+void parse_sub_master<chapter>(chapter &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node)
+{
     if (node.id == 0x45B9) {
         result.edition_entries.emplace_back();
         read_master(result.edition_entries.back(), parser, node);
@@ -267,7 +289,8 @@ void parse_sub_master<chapter>(chapter &result, const element_identify &identify
 }
 
 template<>
-void parse_sub_master<simple_tag>(simple_tag &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node) {
+void parse_sub_master<simple_tag>(simple_tag &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node)
+{
     if (node.id == 0x67C8) {
         result.tags.emplace_back();
         read_master(result.tags.back(), parser, node);
@@ -276,11 +299,12 @@ void parse_sub_master<simple_tag>(simple_tag &result, const element_identify &id
 }
 
 template<>
-void parse_sub_master<tag>(tag &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node) {
+void parse_sub_master<tag>(tag &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node)
+{
     if (node.id == 0x63C0) {
         read_master(result.target, parser, node);
         result.mask |= identify.name_mask;
-    } else if(node.id == 0x67C8) {
+    } else if (node.id == 0x67C8) {
         result.simple_tags.emplace_back();
         read_master(result.simple_tags.back(), parser, node);
         result.mask |= identify.name_mask;
@@ -288,7 +312,8 @@ void parse_sub_master<tag>(tag &result, const element_identify &identify, ebml_p
 }
 
 template<>
-void parse_sub_master<tags>(tags &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node) {
+void parse_sub_master<tags>(tags &result, const element_identify &identify, ebml_parser &parser, const ebml_node &node)
+{
     if (node.id == 0x7373) {
         result.tag_list.emplace_back();
         read_master(result.tag_list.back(), parser, node);
@@ -361,12 +386,12 @@ static void read_value_to_element(T &result, const element_identify &identify, e
             int64_t signed_value;
             if (parser.read_integer(node.size, signed_value) == 0) {
                 auto &list_value = result.*(identify.class_member_ptr.access<IntListMemPtr>());
-                list_value.emplace_back(signed_value);
+                list_value.push_back(signed_value);
                 result.mask |= identify.name_mask;
             }
+            break;
         }
-        case element_type::STRING_LIST:
-        {
+        case element_type::STRING_LIST: {
             std::string str_value;
             if (parser.read_string(node.size, str_value) == 0) {
                 auto &list_value = result.*(identify.class_member_ptr.access<StringListMemPtr>());
@@ -375,8 +400,7 @@ static void read_value_to_element(T &result, const element_identify &identify, e
             }
             break;
         }
-        case element_type::BINARY_LIST:
-        {
+        case element_type::BINARY_LIST: {
             binary bin_value(node.position, node.size);
             (result.*(identify.class_member_ptr.access<BinaryListMemPtr>())).emplace_back(std::move(bin_value));
             result.mask |= identify.name_mask;
@@ -396,6 +420,7 @@ void read_master(T &result, ebml_parser &parser, const ebml_node &master_node)
 {
     ebml_parser_walker walker(parser, master_node.position + master_node.size);
     auto size = master_node.size;
+    auto end = master_node.position + master_node.size;
     auto &id_map = get_identify<T>();
 
     while (size > 0) {
@@ -404,7 +429,7 @@ void read_master(T &result, ebml_parser &parser, const ebml_node &master_node)
             return;
         }
 
-        size -= node.size;
+        size = end - node.position - node.size;
         auto identify = id_map.get(node.id);
         if (nullptr != identify) {
             read_value_to_element<T>(result, *identify, parser, node);
@@ -415,11 +440,11 @@ void read_master(T &result, ebml_parser &parser, const ebml_node &master_node)
 }
 
 
-parser::parser(std::unique_ptr<std::istream> &&stream, parser_callback &cb) : in_stream(std::move(stream)), callback(cb), ep(*in_stream)
+matroska_parser::matroska_parser(std::istream &stream, parser_callback &cb) : callback(cb), ep(stream)
 {
 }
 
-int32_t parser::parse_ebml_header(ebml_header &result)
+int32_t matroska_parser::parse_ebml_header(ebml_header &result)
 {
     ebml_node root_node;
     if (ep.parse_next(root_node) != 0) {
@@ -435,21 +460,20 @@ int32_t parser::parse_ebml_header(ebml_header &result)
     return 0;
 }
 
-int32_t parser::parse_segment(ebml_node &result)
+int32_t matroska_parser::parse_segment(ebml_node &result)
 {
-    ebml_node segment_node;
-    if (ep.parse_next(segment_node) != 0) {
+    if (ep.parse_next(result) != 0) {
         return -1;
     }
 
-    if (segment_node.id != 0x18538067) {
+    if (result.id != 0x18538067) {
         return -1;
     }
 
     return 0;
 }
 
-uint32_t parser::parse_next_element()
+uint32_t matroska_parser::parse_next_element()
 {
     ebml_node node;
     if (ep.parse_next(node) != 0) {
@@ -494,18 +518,18 @@ uint32_t parser::parse_next_element()
     return node.id;
 }
 
-void parser::seek(int64_t position)
+void matroska_parser::seek(int64_t position)
 {
     ep.set_stream_pos(position);
 }
 
-int32_t parser::resync_to_cluster()
+int32_t matroska_parser::resync_to_cluster()
 {
     // this operation consumes that byte_sizeof(EBML_CLUSTER_ID) == 4
     return ep.sync_to_ebml_id(EBML_CLUSTER_ID);
 }
 
-int32_t parser::skip_to_cluster()
+int32_t matroska_parser::skip_to_cluster()
 {
     auto curr_pos = ep.get_stream_pos();
     auto pos = curr_pos;
@@ -527,63 +551,64 @@ int32_t parser::skip_to_cluster()
     }
 }
 
-void parser::do_meta_seek_info_parse(const ebml_node &node)
+void matroska_parser::do_meta_seek_info_parse(const ebml_node &node)
 {
     meta_seek_head meta_seek_info;
     read_master(meta_seek_info, ep, node);
     callback.handle_meta_seek_info(meta_seek_info, node);
 }
 
-void parser::do_segment_info_parse(const ebml_node &node)
+void matroska_parser::do_segment_info_parse(const ebml_node &node)
 {
     segment_info seg_info;
     read_master(seg_info, ep, node);
     callback.handle_segment_info(seg_info, node);
 }
 
-void parser::do_cluster_parse(const ebml_node &node)
+void matroska_parser::do_cluster_parse(const ebml_node &node)
 {
     cluster cluster_info;
     read_master(cluster_info, ep, node);
     callback.handle_cluster(cluster_info, node);
 }
 
-void parser::do_track_parse(const ebml_node &node)
+void matroska_parser::do_track_parse(const ebml_node &node)
 {
     track track_info;
     read_master(track_info, ep, node);
     callback.handle_track(track_info, node);
 }
 
-void parser::do_cueing_data_parse(const ebml_node &node)
+void matroska_parser::do_cueing_data_parse(const ebml_node &node)
 {
     cue cue_data;
     read_master(cue_data, ep, node);
     callback.handle_cueing_data(cue_data, node);
 }
 
-void parser::do_attachment_parse(const ebml_node &node)
+void matroska_parser::do_attachment_parse(const ebml_node &node)
 {
     attachment attach;
     read_master(attach, ep, node);
     callback.handle_attachment(attach, node);
 }
 
-void parser::do_chapters_parse(const ebml_node &node)
+void matroska_parser::do_chapters_parse(const ebml_node &node)
 {
     chapter chapter_info;
     read_master(chapter_info, ep, node);
     callback.handle_chapters(chapter_info, node);
 }
 
-void parser::do_tagging_parse(const ebml_node &node)
+void matroska_parser::do_tagging_parse(const ebml_node &node)
 {
     tags tags_info;
     read_master(tags_info, ep, node);
     callback.handle_tagging(tags_info, node);
 }
 
-void parser::do_skip_parse(const ebml_node &node)
+void matroska_parser::do_skip_parse(const ebml_node &node)
 {
+    ebml_parser_walker walker(ep, node.position + node.size);
     callback.handle_unknown(node);
 }
