@@ -19,10 +19,11 @@ static int64_t from_big_endian_variable(const char *source, unsigned int size)
 
     int64_t result = 0;
     for (int i = 0; i < size; ++i) {
-        result |= source[i] << (8 - i);
+        result = (result << 8) | static_cast<unsigned char>(source[i]);
     }
 
-    return result >> (8 - size);
+    auto shift_size = (8 - size) * 8;
+    return (result << shift_size) >> shift_size;
 }
 
 static uint64_t from_big_endian_variable_unsigned(const char *source, unsigned int size)
@@ -31,7 +32,7 @@ static uint64_t from_big_endian_variable_unsigned(const char *source, unsigned i
 
     uint64_t result = 0;
     for (int i = 0; i < size; ++i) {
-        result |= source[i] << (size - i);
+        result = (result << 8) | static_cast<unsigned char>(source[i]);
     }
 
     return result;
