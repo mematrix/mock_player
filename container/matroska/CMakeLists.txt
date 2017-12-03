@@ -10,4 +10,5 @@ if (BUILD_SEPERATE_LIB)
 endif (BUILD_SEPERATE_LIB)
 
 aux_source_directory(test MatroskaTestSRC)
-add_executable(matroska_test ${MatroskaSRC} ${MatroskaTestSRC})
+set(SuppressWaring include/matroska_demux.hpp)  # add to suppress clion warning, and enable clion analyze the header file
+add_executable(matroska_test ${MatroskaSRC} ${MatroskaTestSRC} ${SuppressWaring})
