@@ -113,7 +113,14 @@ public:
      * @param position stream read position
      * @return zero if success, otherwise non-zero
      */
-    void seek(int64_t position);
+    void seek(int64_t position) { ep.set_stream_pos(position); }
+
+    /**
+     * whether under stream is eof
+     *
+     * @return true if stream is eof, otherwise false
+     */
+    bool is_eof() const { return ep.is_eof(); }
 
     /**
      * resync stream position to (probable) next cluster element start position.

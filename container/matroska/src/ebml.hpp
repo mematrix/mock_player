@@ -9,7 +9,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
-#include <iosfwd>
+#include <istream>
 #include <stack>
 
 
@@ -32,9 +32,11 @@ public:
 
     int32_t parse_next(ebml_node &result);
 
-    int64_t get_stream_pos() const;
+    bool is_eof() const { return stream.eof(); }
 
-    void set_stream_pos(int64_t pos);
+    int64_t get_stream_pos() const { return stream.tellg(); }
+
+    void set_stream_pos(int64_t pos) { stream.seekg(pos); }
 
     /**
      * sync stream position to a special ebml, of which the id length is 4

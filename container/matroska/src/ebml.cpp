@@ -4,7 +4,6 @@
 
 #include "ebml.hpp"
 
-#include <istream>
 #include "util/endian_util.hpp"
 
 using namespace std;
@@ -178,16 +177,6 @@ int32_t ebml_parser::read_binary(size_t size, std::vector<uint8_t> &result)
     }
 
     return static_cast<int32_t>(size - i);
-}
-
-void ebml_parser::set_stream_pos(int64_t pos)
-{
-    stream.seekg(pos);
-}
-
-int64_t ebml_parser::get_stream_pos() const
-{
-    return stream.tellg();
 }
 
 int32_t ebml_parser::sync_to_ebml_id(uint32_t id)

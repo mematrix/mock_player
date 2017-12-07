@@ -518,11 +518,6 @@ uint32_t matroska_parser::parse_next_element()
     return node.id;
 }
 
-void matroska_parser::seek(int64_t position)
-{
-    ep.set_stream_pos(position);
-}
-
 int32_t matroska_parser::resync_to_cluster()
 {
     // this operation consumes that byte_sizeof(EBML_CLUSTER_ID) == 4
