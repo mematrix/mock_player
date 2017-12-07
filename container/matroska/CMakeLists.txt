@@ -23,6 +23,6 @@ if (BUILD_SEPERATE_LIB)
 endif (BUILD_SEPERATE_LIB)
 
 aux_source_directory(test MatroskaTestSRC)
-set(SuppressWaring include/matroska_demux.hpp)  # add to suppress clion warning, and enable clion analyze the header file
+set(SuppressWaring include/matroska_demux.hpp include/matroska_track.hpp include/matroska_common.hpp)  # add to suppress clion warning, and enable clion analyze the header file
 add_executable(matroska_test ${MatroskaSRC} ${MatroskaTestSRC} ${SuppressWaring})
 target_link_libraries(matroska_test ${FFMPEG_LIBRARY})
