@@ -5,6 +5,10 @@
 #include "matroska_demux.hpp"
 #include "parser.hpp"
 
+#include <mutex>
+#include <condition_variable>
+#include <thread>
+
 
 namespace player {
 namespace container {
@@ -18,6 +22,18 @@ struct matroska_demux_t
 {
     size_t max_buffer_size = 20 * 1024 * 1024;  // 20MB
 
+    std::thread inner_thread;
+    bool thread_terminate = false;
+    bool thread_running = false;
+
+    std::mutex demux_mutex;
+    std::condition_variable demux_cond;
+
+    // segment start position.
+    int64_t segment_start = 0;
+    // whether under stream is eof.
+    bool eof = false;
+
     matroska_demux_t() = default;
 };
 
@@ -29,7 +45,7 @@ public:
 
     void set_buffer_max_size(size_t max_size);
 
-    void start_thread();
+    bool start_thread();
 
     void stop_thread_async();
 
@@ -66,6 +82,13 @@ public:
     bool need_parse_node(const ebml_node &node) override;
 
 private:
+    static void demux_thread(matroska_demux_impl *demux_impl) noexcept;
+
+    bool thread_work();
+
+    bool read_packet();
+
+private:
     matroska_parser parser;
     demux_callback &callback;
     matroska_demux_t demux;
@@ -82,19 +105,35 @@ void matroska_demux_impl::set_buffer_max_size(size_t max_size)
     }
 }
 
-void matroska_demux_impl::start_thread()
+bool matroska_demux_impl::start_thread()
 {
+    if (!demux.thread_running) {
+        demux.thread_terminate = false;
+        try {
+            demux.inner_thread = std::thread(matroska_demux_impl::demux_thread, this);
+            demux.thread_running = true;
+        } catch (...) {
+            return false;
+        }
+    }
 
+    return demux.thread_running;
 }
 
 void matroska_demux_impl::stop_thread_async()
 {
-
+    if (demux.thread_running) {
+        demux.thread_terminate = true;
+        demux.demux_cond.notify_one();
+    }
 }
 
 void matroska_demux_impl::stop_thread()
 {
-
+    if (demux.thread_running) {
+        stop_thread_async();
+        demux.inner_thread.join();
+    }
 }
 
 void matroska_demux_impl::select_track(uint32_t id)
@@ -172,6 +211,66 @@ bool matroska_demux_impl::need_parse_node(const ebml_node &node)
     return false;
 }
 
+// the thread model refers to the implementation of the mpv-player.
+void matroska_demux_impl::demux_thread(matroska_demux_impl *demux_impl) noexcept
+{
+    class status_raii
+    {
+        bool &running;
+
+    public:
+        explicit status_raii(bool &r) : running(r) { running = true; }
+
+        ~status_raii() { running = false; }
+    };
+
+    auto impl = demux_impl;
+    auto &demux = impl->demux;
+    status_raii sr(demux.thread_running);
+
+    // if stream is not a matroska format stream, return.
+    ebml_header header;
+    if (impl->parser.parse_ebml_header(header) != 0) {
+        impl->callback.notify_event(demux_notify_event::stream_error);
+        return;
+    }
+    if (header.doc_type_read_version > 4) {
+        impl->callback.notify_event(demux_notify_event::stream_not_support);
+        return;
+    }
+
+    ebml_node node{0};
+    if (impl->parser.parse_segment(node) != 0) {
+        impl->callback.notify_event(demux_notify_event::stream_error);
+        return;
+    }
+    demux.segment_start = node.position;
+
+    std::unique_lock lock(demux.demux_mutex);
+    while (!demux.thread_terminate) {
+        if (impl->thread_work()) {
+            continue;
+        }
+
+        demux.demux_cond.notify_one();
+        demux.demux_cond.wait(lock);
+    }
+}
+
+bool matroska_demux_impl::thread_work()
+{
+    if (!demux.eof) {
+        return read_packet();
+    }
+
+    return false;
+}
+
+bool matroska_demux_impl::read_packet()
+{
+    return false;
+}
+
 
 }
 }
@@ -186,45 +285,45 @@ matroska_demux::matroska_demux(std::istream &stream, demux_callback &cb) : impl(
 
 void matroska_demux::set_buffer_max_size(size_t max_size)
 {
-    (*impl).set_buffer_max_size(max_size);  // clion bug. it can not interpret the operator-> of std::unique_ptr
+    impl->set_buffer_max_size(max_size);
 }
 
-void matroska_demux::start_thread()
+bool matroska_demux::start_thread()
 {
-    (*impl).start_thread();
+    return impl->start_thread();
 }
 
 void matroska_demux::stop_thread_async()
 {
-    (*impl).stop_thread_async();
+    impl->stop_thread_async();
 }
 
 void matroska_demux::stop_thread()
 {
-    (*impl).stop_thread();
+    impl->stop_thread();
 }
 
 void matroska_demux::select_track(uint32_t id)
 {
-    (*impl).select_track(id);
+    impl->select_track(id);
 }
 
 void matroska_demux::unselect_track(uint32_t id)
 {
-    (*impl).unselect_track(id);
+    impl->unselect_track(id);
 }
 
 std::shared_ptr<demux_packet> matroska_demux::read_packet(uint32_t track_id)
 {
-    return (*impl).read_packet(track_id);
+    return impl->read_packet(track_id);
 }
 
 int32_t matroska_demux::read_packet_async(uint32_t track_id, std::shared_ptr<demux_packet> &out_packet)
 {
-    return (*impl).read_packet_async(track_id, out_packet);
+    return impl->read_packet_async(track_id, out_packet);
 }
 
 int matroska_demux::seek(uint64_t millisecond)
 {
-    return (*impl).seek(millisecond);
+    return impl->seek(millisecond);
 }

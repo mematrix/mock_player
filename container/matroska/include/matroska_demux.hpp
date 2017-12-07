@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <memory>
 #include <iosfwd>
+#include <string>
 
 
 namespace player {
@@ -21,10 +22,54 @@ enum class demux_notify_event
     file_info_loaded,
     cue_data_loaded,
     track_info_loaded,
-    play_ready,
     buffer_overflow_warning,
     begin_seek,
-    end_seek
+    end_seek,
+    stream_not_support,
+    stream_error
+};
+
+
+enum matroska_track_type
+{
+    MATROSKA_TRACK_VIDEO = 1,
+    MATROSKA_TRACK_AUDIO = 2,
+    MATROSKA_TRACK_COMPLEX = 3,
+    MATROSKA_TRACK_LOGO = 0x10,
+    MATROSKA_TRACK_SUBTITLE = 0x11,
+    MATROSKA_TRACK_BUTTONS = 0x12,
+    MATROSKA_TRACK_CONTROL = 0x20
+};
+
+struct matroska_demux_info
+{
+    struct file_info
+    {
+        std::string doc_type;
+        double duration_ms = 0;     // duration in millisecond
+        int64_t date_utc_ms = 0;    // utc date in millisecond
+        std::string title;
+        std::string muxing_app;
+        std::string writing_app;
+
+        file_info() = default;
+    };
+
+    struct track_info
+    {
+        uint64_t uid = 0;
+        uint64_t type = 0;
+        bool enable = false;
+        bool default_track = false;
+        bool force = false;
+        bool valid = false;         // identify whether the track info is valid
+        std::string name;
+        std::string language;
+        std::string codec_id;
+        std::string codec_name;
+
+        track_info() = default;
+    };
 };
 
 
@@ -35,7 +80,7 @@ class demux_callback
 public:
     virtual void notify_event(demux_notify_event event) = 0;
 
-    virtual void handle_async_packet(const std::shared_ptr<demux_packet> &packet) { }
+    virtual void wakeup() { }
 
     virtual ~demux_callback() = default;
 };
@@ -54,7 +99,7 @@ public:
 
     void set_buffer_max_size(size_t max_size);
 
-    void start_thread();
+    bool start_thread();
 
     void stop_thread_async();
 
@@ -75,7 +120,7 @@ public:
     /**
      * Poll the demuxer queue, and if there's a packet, return it. Otherwise, just make
      * the demuxer thread read packets for this stream, and if there's at least one
-     * packet, call the handle_async_packet callback.
+     * packet, call the wakeup callback.
      *
      * @param track_id which track stream to be read
      * @param out_packet result packet
