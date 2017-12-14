@@ -34,6 +34,11 @@ struct matroska_demux_t
     // whether under stream is eof.
     bool eof = false;
 
+    track track_infos;
+    matroska_demux_info demux_info;
+    size_t total_size = 0;      // total cache size of all track streams
+    size_t forward_size = 0;    // unread cache size of all track streams
+
     matroska_demux_t() = default;
 };
 
@@ -238,8 +243,9 @@ void matroska_demux_impl::demux_thread(matroska_demux_impl *demux_impl) noexcept
         impl->callback.notify_event(demux_notify_event::stream_not_support);
         return;
     }
+    demux.demux_info.file_info.doc_type = std::move(header.doc_type);
 
-    ebml_node node{0};
+    ebml_node node;
     if (impl->parser.parse_segment(node) != 0) {
         impl->callback.notify_event(demux_notify_event::stream_error);
         return;
@@ -268,7 +274,22 @@ bool matroska_demux_impl::thread_work()
 
 bool matroska_demux_impl::read_packet()
 {
-    return false;
+    bool read_more = false;
+    for (const auto &track_info : demux.demux_info.track_list) {
+        read_more |= track_info.eager && track_info.packet_buffer.empty();
+    }
+    if (demux.total_size > demux.max_buffer_size) {
+        if (!read_more) {
+            return false;
+        }
+        // warning buffer overflow
+        callback.notify_event(demux_notify_event::buffer_overflow_warning);
+        return false;
+    }
+
+    parser.parse_next_element();
+
+    return true;
 }
 
 

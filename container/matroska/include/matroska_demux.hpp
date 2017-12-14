@@ -11,6 +11,12 @@
 #include <iosfwd>
 #include <string>
 
+extern "C" {
+#include "libavcodec/avcodec.h"
+};
+
+#include "matroska_track.hpp"
+
 
 namespace player {
 namespace container {
@@ -41,9 +47,30 @@ enum matroska_track_type
     MATROSKA_TRACK_CONTROL = 0x20
 };
 
+class demux_track
+{
+    friend class matroska_demux_impl;
+
+    track_entry &track_info;
+    bool selected = false;
+    bool eager = false;
+    size_t total_size = 0;      // total cache size
+    size_t forward_size = 0;    // unread cache size
+    std::vector<AVPacket *> packet_buffer;
+
+public:
+    explicit demux_track(track_entry &entry) : track_info(entry) { }
+
+    const track_entry &track() const { return track_info; }
+
+    uint64_t uid() const { return track_info.uid; }
+
+    bool is_selected() const { return selected; }
+};
+
 struct matroska_demux_info
 {
-    struct file_info
+    struct demux_file_info
     {
         std::string doc_type;
         double duration_ms = 0;     // duration in millisecond
@@ -52,24 +79,13 @@ struct matroska_demux_info
         std::string muxing_app;
         std::string writing_app;
 
-        file_info() = default;
+        demux_file_info() = default;
     };
 
-    struct track_info
-    {
-        uint64_t uid = 0;
-        uint64_t type = 0;
-        bool enable = false;
-        bool default_track = false;
-        bool force = false;
-        bool valid = false;         // identify whether the track info is valid
-        std::string name;
-        std::string language;
-        std::string codec_id;
-        std::string codec_name;
+    demux_file_info file_info;
+    std::list<demux_track> track_list;
 
-        track_info() = default;
-    };
+    matroska_demux_info() = default;
 };
 
 
