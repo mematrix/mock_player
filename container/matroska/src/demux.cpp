@@ -8,6 +8,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <thread>
+#include <unordered_set>
 
 
 namespace player {
@@ -21,6 +22,7 @@ constexpr size_t min_buffer_size = 5 * 1024 * 1024;     // min buffer size
 struct matroska_demux_t
 {
     size_t max_buffer_size = 20 * 1024 * 1024;  // 20MB
+    uint64_t min_duration_ms = 5 * 1000;    // minimum duration of cache in millisecond
 
     std::thread inner_thread;
     bool thread_terminate = false;
@@ -33,6 +35,10 @@ struct matroska_demux_t
     int64_t segment_start = 0;
     // whether under stream is eof.
     bool eof = false;
+
+    std::unordered_set<int64_t> parsed_header;
+    std::vector<ebml_node> delay_parse_header;
+    bool can_play = false;
 
     track track_infos;
     matroska_demux_info demux_info;
@@ -92,6 +98,8 @@ private:
     bool thread_work();
 
     bool read_packet();
+
+    void read_delay_header();
 
 private:
     matroska_parser parser;
@@ -213,7 +221,17 @@ void matroska_demux_impl::handle_unknown(const ebml_node &node)
 
 bool matroska_demux_impl::need_parse_node(const ebml_node &node)
 {
-    return false;
+    if (EBML_CLUSTER_ID == node.id) {
+        return true;    // always parse cluster
+    }
+
+    if (!demux.can_play && EBML_CUEING_DATA_ID == node.id) {
+        demux.delay_parse_header.push_back(node);
+        return false;   // delay parse cue data
+    }
+
+    auto result = demux.parsed_header.insert(node.position).second;     // if exists position, do not parse again
+    return result;
 }
 
 // the thread model refers to the implementation of the mpv-player.
@@ -275,10 +293,17 @@ bool matroska_demux_impl::thread_work()
 bool matroska_demux_impl::read_packet()
 {
     bool read_more = false;
+    bool prefetch_more = false;
     for (const auto &track_info : demux.demux_info.track_list) {
         read_more |= track_info.eager && track_info.packet_buffer.empty();
+        if (track_info.eager && track_info.base_ts != AV_NOPTS_VALUE &&
+            demux.min_duration_ms > 0 && track_info.last_ts != AV_NOPTS_VALUE &&
+            track_info.last_ts >= track_info.base_ts) {
+            prefetch_more |= track_info.last_ts - track_info.base_ts < demux.min_duration_ms;
+        }
     }
     if (demux.total_size > demux.max_buffer_size) {
+        read_delay_header();
         if (!read_more) {
             return false;
         }
@@ -287,9 +312,27 @@ bool matroska_demux_impl::read_packet()
         return false;
     }
 
-    parser.parse_next_element();
+    if (!read_more && !prefetch_more) {
+        read_delay_header();
+        return false;
+    }
+
+    if (parser.parse_next_element() == ~0U) {
+        demux.eof = true;
+    }
 
     return true;
+}
+
+void matroska_demux_impl::read_delay_header()
+{
+    if (demux.can_play && !demux.delay_parse_header.empty()) {
+        for (const auto &node : demux.delay_parse_header) {
+            parser.parse_element(node);
+        }
+        demux.delay_parse_header.clear();
+        demux.delay_parse_header.shrink_to_fit();
+    }
 }
 
 

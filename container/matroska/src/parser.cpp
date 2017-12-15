@@ -477,12 +477,52 @@ uint32_t matroska_parser::parse_next_element()
 {
     ebml_node node;
     if (ep.parse_next(node) != 0) {
-        return static_cast<uint32_t>(-1);
+        return ~0U;
     }
 
+    parse_dispatch(node);
+    return node.id;
+}
+
+void matroska_parser::parse_element(const ebml_node &node)
+{
+    ep.set_stream_pos(node.position);
+    parse_dispatch(node);
+}
+
+int32_t matroska_parser::resync_to_cluster()
+{
+    // this operation consumes that byte_sizeof(EBML_CLUSTER_ID) == 4
+    return ep.sync_to_ebml_id(EBML_CLUSTER_ID);
+}
+
+int32_t matroska_parser::skip_to_cluster()
+{
+    auto curr_pos = ep.get_stream_pos();
+    auto pos = curr_pos;
+
+    while (true) {
+        ebml_node node;
+        if (ep.parse_next(node) != 0) {
+            ep.set_stream_pos(curr_pos);
+            return -1;
+        }
+
+        if (node.id == EBML_CLUSTER_ID) {
+            ep.set_stream_pos(pos);
+            return 0;
+        }
+
+        pos = node.position + node.size;
+        ep.set_stream_pos(pos);
+    }
+}
+
+void matroska_parser::parse_dispatch(const ebml_node &node)
+{
     if (!callback.need_parse_node(node)) {
         ep.set_stream_pos(node.position + node.size);
-        return node.id;
+        return;
     }
 
     switch (node.id) {
@@ -513,36 +553,6 @@ uint32_t matroska_parser::parse_next_element()
         default:
             do_skip_parse(node);
             break;
-    }
-
-    return node.id;
-}
-
-int32_t matroska_parser::resync_to_cluster()
-{
-    // this operation consumes that byte_sizeof(EBML_CLUSTER_ID) == 4
-    return ep.sync_to_ebml_id(EBML_CLUSTER_ID);
-}
-
-int32_t matroska_parser::skip_to_cluster()
-{
-    auto curr_pos = ep.get_stream_pos();
-    auto pos = curr_pos;
-
-    while (true) {
-        ebml_node node;
-        if (ep.parse_next(node) != 0) {
-            ep.set_stream_pos(curr_pos);
-            return -1;
-        }
-
-        if (node.id == EBML_CLUSTER_ID) {
-            ep.set_stream_pos(pos);
-            return 0;
-        }
-
-        pos = node.position + node.size;
-        ep.set_stream_pos(pos);
     }
 }
 

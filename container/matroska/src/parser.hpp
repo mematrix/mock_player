@@ -108,6 +108,12 @@ public:
     uint32_t parse_next_element();
 
     /**
+     * parse special level 1 element
+     * @param node ebml info
+     */
+    void parse_element(const ebml_node &node);
+
+    /**
      * seek stream position
      *
      * @param position stream read position
@@ -152,6 +158,8 @@ public:
     int32_t read_element(T &result, uint32_t id, master_handler<T> handler = nullptr);
 
 private:
+    void parse_dispatch(const ebml_node &node);
+
     void do_meta_seek_info_parse(const ebml_node &node);
 
     void do_segment_info_parse(const ebml_node &node);

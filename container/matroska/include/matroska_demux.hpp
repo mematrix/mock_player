@@ -56,6 +56,8 @@ class demux_track
     bool eager = false;
     size_t total_size = 0;      // total cache size
     size_t forward_size = 0;    // unread cache size
+    int64_t base_ts = AV_NOPTS_VALUE;       // cache start raw timestamp
+    int64_t last_ts = AV_NOPTS_VALUE;       // cache last raw timestamp
     std::vector<AVPacket *> packet_buffer;
 
 public:
