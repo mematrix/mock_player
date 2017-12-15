@@ -109,6 +109,7 @@ public:
 
     /**
      * parse special level 1 element
+     *
      * @param node ebml info
      */
     void parse_element(const ebml_node &node);
@@ -132,6 +133,7 @@ public:
      * resync stream position to (probable) next cluster element start position.
      * @warning call this method only when stream is corrupt, because this method will find the cluster
      * id in the stream sequentially.
+     *
      * @return zero if success, otherwise non-zero
      */
     int32_t resync_to_cluster();
@@ -143,6 +145,14 @@ public:
      * @return zero if success, otherwise non-zero
      */
     int32_t skip_to_cluster();
+
+    /**
+     * get a temp control of lower stream. when stream_proxy object released, lower stream's
+     * position will be restored automatically
+     *
+     * @return a stream proxy object
+     */
+    ebml_parser::stream_proxy get_stream() { return ep.get_stream(); }
 
     /**
      * read special type element from current position. if id reading from stream is not equal to
